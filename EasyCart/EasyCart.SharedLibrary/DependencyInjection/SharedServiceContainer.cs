@@ -17,7 +17,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
 
             // Add DbContext with PostgreSQL provider
             services.AddDbContext<TContext>(options =>
-                options.UseNpgsql(config.GetConnectionString("DefaultConnection"),
+                options.UseNpgsql(config.GetConnectionString("EasyCartConnection"),
                 sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
             //Add serilog logger

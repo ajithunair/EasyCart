@@ -2,5 +2,6 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
   </Folder>
+  <Project Path="EasyCart.ProductApi/EasyCart.ProductApi.csproj" Id="86af4bf3-34a6-40d7-9799-ecb92113e892" />
   <Project Path="EasyCart.SharedLibrary/EasyCart.SharedLibrary.csproj" />
 </Solution>
