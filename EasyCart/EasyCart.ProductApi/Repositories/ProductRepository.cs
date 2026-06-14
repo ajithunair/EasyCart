@@ -15,7 +15,7 @@ namespace EasyCart.ProductApi.Repositories
             try
             {
                 var result = await GetByAsync(p => p.Name == entity.Name);
-                if (result == null)
+                if (result != null)
                 {
                     return new Response
                     {

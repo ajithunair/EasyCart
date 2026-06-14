@@ -36,7 +36,7 @@ namespace EasyCart.ProductApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Response>> CreateProduct([FromBody] ProductDTO productDTO)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -47,7 +47,7 @@ namespace EasyCart.ProductApi.Controllers
         [HttpPut]
         public async Task<ActionResult<Response>> UpdateProduct([FromBody] ProductDTO productDTO)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
