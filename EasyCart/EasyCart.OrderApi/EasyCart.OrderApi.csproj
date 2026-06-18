@@ -17,11 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\EasyCart.SharedLibrary\EasyCart.SharedLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EasyCart.SharedLibrary\EasyCart.SharedLibrary.csproj" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

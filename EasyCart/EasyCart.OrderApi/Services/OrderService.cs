@@ -66,7 +66,7 @@ namespace EasyCart.OrderApi.Services
 
         public async Task<IEnumerable<OrderDto>> GetOrdersByClientIdAsync(int clientId)
         {
-            var orders = await orderInterface.GetByAsync(o => o.ClientId == clientId);
+            var orders = await orderInterface.GetOrdersAsync(o => o.ClientId == clientId);
             if(orders == null || !orders.Any())
             {
                 return Enumerable.Empty<OrderDto>();
