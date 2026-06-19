@@ -41,7 +41,7 @@ namespace EasyCart.OrderApi.Controllers
             return orders.Any() ? Ok(orders) : NotFound(null);
         }
 
-        [HttpGet("details/{oderId:int}")]
+        [HttpGet("details/{orderId:int}")]
         public async Task<ActionResult<OrderDetailsDto>> GetOrderDetails(int orderId)
         {
             if (orderId <= 0) return BadRequest("Invalid order Id");

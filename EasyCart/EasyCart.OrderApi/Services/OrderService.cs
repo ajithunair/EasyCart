@@ -45,6 +45,13 @@ namespace EasyCart.OrderApi.Services
             var productDto = await retryPipeline.ExecuteAsync(async token => await GetProductByIdAsync(order.ProductId));
             var appUserDto = await retryPipeline.ExecuteAsync(async token => await GetUser(order.ClientId));
 
+            if(productDto is null)
+                return null!;
+
+            if (appUserDto is null)
+                return null!;
+
+
             //populate order details
             var orderDetails = new OrderDetailsDto(
             order.Id,
