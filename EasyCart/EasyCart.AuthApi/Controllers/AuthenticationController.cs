@@ -1,10 +1,14 @@
 ﻿using EasyCart.AuthApi.DTOs;
 using EasyCart.AuthApi.Interfaces;
 using EasyCart.SharedLibrary.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EasyCart.AuthApi.Controllers
 {
+    [Route("api/[Controller]")]
+    [ApiController]
+    [AllowAnonymous]
     public class AuthenticationController(IUser userInterface) : Controller
     {
         [HttpPost("register")]
@@ -42,6 +46,7 @@ namespace EasyCart.AuthApi.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<GetUserDto>> GetUser(int id)
         {
             if (id <= 0) return BadRequest("Invalid user Id");

@@ -3,6 +3,7 @@ using EasyCart.OrderApi.DTOs.Conversions;
 using EasyCart.OrderApi.Interfaces;
 using EasyCart.OrderApi.Services;
 using EasyCart.SharedLibrary.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,7 @@ namespace EasyCart.OrderApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrdersController(IOrder orderInterface, IOrderService orderService) : ControllerBase
     {
         [HttpGet]

@@ -1,0 +1,6 @@
+@EasyCart.ApiGateway_HostAddress = http://localhost:5293
+
+GET {{EasyCart.ApiGateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -21,7 +21,7 @@ namespace EasyCart.OrderApi.Services
 
         public async Task<AppUserDto> GetUser(int userId)
         {
-            var httpResponse = await httpClient.GetAsync($"api/products/{userId}");
+            var httpResponse = await httpClient.GetAsync($"api/authentication/{userId}");
             if (!httpResponse.IsSuccessStatusCode)
             {
                 return null!;

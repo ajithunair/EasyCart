@@ -46,7 +46,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
             app.UseMiddleware<GlobalException>();
 
             // Add Middleware to listen only to API Gateway
-            //app.UseMiddleware<ListenToOnlyApiGateway>();
+            app.UseMiddleware<ListenToOnlyApiGateway>();
             return app;
         }
     }

@@ -2,6 +2,7 @@
 using EasyCart.ProductApi.DTOs.Conversions;
 using EasyCart.ProductApi.Interfaces;
 using EasyCart.SharedLibrary.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,7 @@ namespace EasyCart.ProductApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class ProductsController(IProduct productInterface) : ControllerBase
     {
         [HttpGet]
@@ -34,6 +36,7 @@ namespace EasyCart.ProductApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles ="Admin")]
         public async Task<ActionResult<Response>> CreateProduct([FromBody] ProductDTO productDTO)
         {
             if (!ModelState.IsValid)
@@ -45,6 +48,7 @@ namespace EasyCart.ProductApi.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Response>> UpdateProduct([FromBody] ProductDTO productDTO)
         {
             if (!ModelState.IsValid)
@@ -56,6 +60,7 @@ namespace EasyCart.ProductApi.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Response>> DeleteProduct(ProductDTO productDTO)
         {
             var response = await productInterface.DeleteAsync(productDTO.ToEntity());
