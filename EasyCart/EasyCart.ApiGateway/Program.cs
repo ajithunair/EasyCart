@@ -23,10 +23,15 @@ builder.Services.AddCors(options =>
 
 // Configure the HTTP request pipeline.
 var app = builder.Build();
-app.UseCors();
-app.UseMiddleware<AttachApiGatewaySignarureToRequest>();
-app.UseOcelot().Wait();
+
 app.UseHttpsRedirection();
+
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseMiddleware<AttachApiGatewaySignarureToRequest>();
+await app.UseOcelot();
 
 app.Run();
 

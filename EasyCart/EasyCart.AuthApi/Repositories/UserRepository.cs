@@ -69,7 +69,7 @@ namespace EasyCart.AuthApi.Repositories
                 issuer: config["Jwt:Issuer"],
                 audience: config["Jwt:Audience"],
                 claims: claims,
-                expires: null,
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
                 );
 
