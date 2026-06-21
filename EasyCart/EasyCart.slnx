@@ -2,5 +2,9 @@
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
   </Folder>
+  <Project Path="EasyCart.ApiGateway/EasyCart.ApiGateway.csproj" Id="85802512-7b73-48d0-86b4-60ea9b8b8bc8" />
+  <Project Path="EasyCart.AuthApi/EasyCart.AuthApi.csproj" Id="dec0e4d5-1074-4033-9182-f9d8477671cf" />
+  <Project Path="EasyCart.OrderApi/EasyCart.OrderApi.csproj" Id="49607631-03e2-4c4d-8b83-537c426356a3" />
+  <Project Path="EasyCart.ProductApi/EasyCart.ProductApi.csproj" Id="86af4bf3-34a6-40d7-9799-ecb92113e892" />
   <Project Path="EasyCart.SharedLibrary/EasyCart.SharedLibrary.csproj" />
 </Solution>

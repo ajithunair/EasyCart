@@ -26,6 +26,8 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                         System.Text.Encoding.UTF8.GetBytes(config["Jwt:SecretKey"]))
                 };
             });
+
+            services.AddAuthorization();
             return services;
         }
     }

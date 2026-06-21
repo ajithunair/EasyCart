@@ -1,0 +1,164 @@
+{
+  "Routes": [
+    //Authentication
+    {
+      "DownstreamPathTemplate": "/api/authentication/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "UpstreamPathTemplate": "/api/authentication/{everything}",
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "ClientIdHeader": "api-gateway",
+        "EnableRateLimiting": true,
+        "Limit": 1,
+        "Period": "20s",
+        "PeriodTimespan": 1
+      }
+    },
+
+    //Profuct Api
+    //GET method
+    {
+      "DownstreamPathTemplate": "/api/products/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamPathTemplate": "/api/products/",
+      "RateLimitOptions": {
+        "EnableRateLimiting": false
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EastCart-Caching-Control"
+      }
+    },
+
+    //GET Product By Id method
+    {
+      "DownstreamPathTemplate": "/api/products/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamPathTemplate": "/api/products/{id}",
+      "RateLimitOptions": {
+        "EnableRateLimiting": false
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EastCart-Product-Caching-Control"
+      }
+    },
+
+    //Product => POST, PUT, DELETE --> All
+    {
+      "DownstreamPathTemplate": "/api/products/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "UpstreamPathTemplate": "/api/products/",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+
+    //Order Api
+    //GET method
+    {
+      "DownstreamPathTemplate": "/api/orders/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamPathTemplate": "/api/orders/",
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EastCart-Order-Caching-Control"
+      },
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+
+    //GET By Id
+    {
+      "DownstreamPathTemplate": "/api/orders/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamPathTemplate": "/api/orders/{id}",
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EastCart-Product-Caching-Control"
+      },
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+
+    //Orders => POST, PUT, DELETE --> All
+    {
+      "DownstreamPathTemplate": "/api/orders/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
+      "UpstreamPathTemplate": "/api/orders/{everything}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    }
+  ],
+  
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:5003",
+    "RateLimitOptions": {
+      "ClientIdHeader": "api-gateway",
+      "QuotaExceededMessage": "Too many requests, Please try later",
+      "Limit": 1,
+      "Period": "20s",
+      "PeriodTimespan": 5
+    }
+  }
+}
