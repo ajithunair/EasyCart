@@ -10,10 +10,11 @@ namespace EasyCart.ProductApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [AllowAnonymous]
+    [Authorize]
     public class ProductsController(IProduct productInterface) : ControllerBase
     {
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
             var products = await productInterface.GetAllAsync();
@@ -25,6 +26,7 @@ namespace EasyCart.ProductApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
             var product = await productInterface.FindByIdAsync(id);

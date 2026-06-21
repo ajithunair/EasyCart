@@ -30,6 +30,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/", () => "EasyCart API Gateway Running");
+
 app.UseMiddleware<AttachApiGatewaySignarureToRequest>();
 await app.UseOcelot();
 
