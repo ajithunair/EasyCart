@@ -148,6 +148,24 @@
         "AllowedScopes": [],
         "AuthenticationProviderKey": "Bearer"
       }
+    },
+
+    //Inventory => GET, POST, PUT, DELETE --> All
+    {
+      "DownstreamPathTemplate": "/api/inventory/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5004
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamPathTemplate": "/api/inventory/{everything}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     }
   ],
   
