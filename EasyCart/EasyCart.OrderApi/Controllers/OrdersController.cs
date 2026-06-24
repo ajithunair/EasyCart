@@ -70,14 +70,14 @@ namespace EasyCart.OrderApi.Controllers
                 {
                     OrderId = orderDto.Id,
                     OrderDate = DateTime.UtcNow,
-                    Items = new List<OrderItemMessage>
-                {
-                    new OrderItemMessage
-                    {
-                        ProductId = orderDto.ProductId,
-                        Quantity = orderDto.PurchaseQuantity
-                    }
-                }
+                    Items =
+                    [
+                        new OrderItemMessage
+                        {
+                            ProductId = orderDto.ProductId,
+                            Quantity = orderDto.PurchaseQuantity
+                        }
+                    ]
                 };
                 //Publish the event to RabbitMQ
                 await publishEndpoint.Publish(orderEvent);
