@@ -79,8 +79,12 @@ namespace EasyCart.OrderApi.Controllers
                         }
                     ]
                 };
+                var correlationId = HttpContext.Items["CorrelationId"]?.ToString();
                 //Publish the event to RabbitMQ
-                await publishEndpoint.Publish(orderEvent);
+                await publishEndpoint.Publish(orderEvent, context =>
+                {
+                    context.Headers.Set("CorrelationId", correlationId);
+                });
             }
 
             return response.Success ? Ok(response) : BadRequest(response);

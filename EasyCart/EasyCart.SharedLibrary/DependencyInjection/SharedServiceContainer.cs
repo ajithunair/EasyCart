@@ -34,6 +34,9 @@ namespace EasyCart.SharedLibrary.DependencyInjection
             // Add JWT Authentication scheme
             services.AddJwtAuthentication(config);
 
+            // Add OpenTelemetry
+            services.AddSharedOpenTelemetry(config);
+
             return services;
         }
 
@@ -47,6 +50,9 @@ namespace EasyCart.SharedLibrary.DependencyInjection
 
             // Add Middleware to listen only to API Gateway
             app.UseMiddleware<ListenToOnlyApiGateway>();
+
+            // Add middleware to configure the CorrelationId 
+            app.UseMiddleware< TraceMiddleware>();
             return app;
         }
     }

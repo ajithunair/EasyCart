@@ -5,6 +5,7 @@ using EasyCart.SharedLibrary.RabbitMQ.Events;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using System.Diagnostics;
 
 namespace EasyCart.InventoryApi.RabbitMQ.Consumers
 {
@@ -14,7 +15,10 @@ namespace EasyCart.InventoryApi.RabbitMQ.Consumers
         {
             try
             {
+                var correlationId = context.Headers.Get<string>("CorrelationId");
                 var message = context.Message;
+
+                Console.WriteLine(Activity.Current?.TraceId);
 
                 foreach (var item in message.Items)
                 {
