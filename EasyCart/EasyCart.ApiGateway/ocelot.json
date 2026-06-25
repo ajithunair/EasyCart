@@ -69,7 +69,7 @@
 
     //Product => POST, PUT, DELETE --> All
     {
-      "DownstreamPathTemplate": "/api/products/",
+      "DownstreamPathTemplate": "/api/products/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -78,7 +78,7 @@
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/products/",
+      "UpstreamPathTemplate": "/api/products/{everything}",
       "AuthenticationOptions": {
         "AllowedScopes": [],
         "AuthenticationProviderKey": "Bearer"

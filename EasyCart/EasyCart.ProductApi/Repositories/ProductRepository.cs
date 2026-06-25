@@ -49,6 +49,10 @@ namespace EasyCart.ProductApi.Repositories
                 {
                     context.Products.Remove(product);
                     await context.SaveChangesAsync();
+                    // Invalidate the Cache
+                    var cacheKey = $"Product:{entity.Id}";
+                    await cache.RemoveAsync(cacheKey);
+
                     return new Response { Success = true, Message = $"{product.Name} deleted successfully." };
                 }
             }
@@ -132,13 +136,9 @@ namespace EasyCart.ProductApi.Repositories
 
         public async Task<Response> UpdateAsync(Product entity)
         {
-            string cacheKey = $"Product:{entity.Id}";
             try
             {
-                // Invalidate the Cache
-                await cache.RemoveAsync(cacheKey);
-
-                var product = await FindByIdAsync(entity.Id);
+                var product = await context.Products.FindAsync(entity.Id);
                 if (product == null)
                 {
                     return new Response { Success = false, Message = "Product not found." };
@@ -151,6 +151,7 @@ namespace EasyCart.ProductApi.Repositories
 
                 await context.SaveChangesAsync();
                 // Invalidate the Cache
+                var cacheKey = $"Product:{entity.Id}";
                 await cache.RemoveAsync(cacheKey);
 
                 return new Response { Success = true, Message = $"{product.Name} updated successfully." };

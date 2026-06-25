@@ -5,7 +5,8 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    container_name: ecommerce_redis
+    platform: linux/arm64
+    container_name: EasyCart_redis
     restart: always
     ports:
       - "6379:6379"
