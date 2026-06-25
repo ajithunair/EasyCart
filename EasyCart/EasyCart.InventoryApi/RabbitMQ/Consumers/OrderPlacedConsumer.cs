@@ -29,7 +29,7 @@ namespace EasyCart.InventoryApi.RabbitMQ.Consumers
                 await dbContext.SaveChangesAsync();
                 var logMessage = $"Processed Inventory for Order: {message.OrderId}";
                 Console.WriteLine(logMessage);
-                Serilog.Log.Information(logMessage);
+                Log.Information(logMessage);
             }
             catch (Exception ex)
             {

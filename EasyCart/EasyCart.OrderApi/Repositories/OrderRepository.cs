@@ -1,7 +1,6 @@
 ﻿using EasyCart.OrderApi.Data;
 using EasyCart.OrderApi.Entities;
 using EasyCart.OrderApi.Interfaces;
-using EasyCart.SharedLibrary.Interfacess;
 using EasyCart.SharedLibrary.Logs;
 using EasyCart.SharedLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
@@ -105,7 +104,7 @@ namespace EasyCart.OrderApi.Repositories
             try
             {
                 var orders = await context.Orders.AsNoTracking().ToListAsync();
-                if (orders is null || !orders.Any())
+                if (!orders.Any())
                 {
                     return Enumerable.Empty<Order>();
                 }
@@ -158,7 +157,7 @@ namespace EasyCart.OrderApi.Repositories
             try
             {
                 var orders = await context.Orders.AsNoTracking().Where(predicate).ToListAsync();
-                if (orders is null || !orders.Any())
+                if (!orders.Any())
                 {
                     return Enumerable.Empty<Order>();
                 }
