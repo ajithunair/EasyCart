@@ -23,14 +23,20 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation()
-                    /*.AddAzureMonitorTraceExporter(options=>
-                    {
-                        options.ConnectionString = appInsightsConnectionString;
-                    })*/
+
                     .AddOtlpExporter(options =>
                     {
                         options.Endpoint=new Uri(config["OpenTelemetry:Endpoint"]!.ToString());
                     });
+
+                    if (!string.IsNullOrEmpty(appInsightsConnectionString))
+                    {
+
+                        tracing.AddAzureMonitorTraceExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
                 });
 
             return services;

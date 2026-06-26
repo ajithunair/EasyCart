@@ -10,16 +10,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var rabbitSection = builder.Configuration.GetSection("RabbitMQ");
+
 //Configure MassTransit
 builder.Services.AddMassTransit(x =>
 {
 
     x.UsingRabbitMq((context, config) =>
     {
-        config.Host("localhost", "/", h =>
+        config.Host(rabbitSection["Host"]!, "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(rabbitSection["Username"]!);
+            h.Password(rabbitSection["Password"]!);
         });
 
         config.ConfigureEndpoints(context);
@@ -38,8 +40,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
