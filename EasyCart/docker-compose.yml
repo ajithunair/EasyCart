@@ -1,0 +1,207 @@
+
+services:
+  postgres: 
+    image: postgres:16 
+    container_name: EasyCart-postgres 
+    restart: always 
+    
+    environment: 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres123 
+      POSTGRES_DB: authdb  
+
+    ports: 
+      - "5432:5432" 
+
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data 
+      - /init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U postgres"] 
+      interval: 10s 
+      timeout: 5s 
+      retries: 5 
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: EasyCart_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    ports:
+      - "8001:5540"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      - redis
+  
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: EasyCart-rabbitmq
+    ports:
+      # RabbitMQ Broker port (MassTransit connects here)
+      - "5672:5672"
+      # RabbitMQ Management Web UI port
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      # Optional: Persists RabbitMQ data so queues aren't lost when the container stops
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: easycart-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+
+  product-api:
+    build:
+      context: .
+      dockerfile: EasyCart.ProductApi/Dockerfile
+
+    container_name: easycart-product
+
+    ports:
+      - "5001:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres123"
+      ConnectionStrings__RedisConnection: "redis:6379"
+      RabbitMQ__Host: "rabbitmq"
+
+  order-api:
+    build:
+      context: .
+      dockerfile: EasyCart.OrderApi/Dockerfile
+
+    container_name: easycart-order
+
+    ports:
+      - "5002:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=orderdb;Username=postgres;Password=postgres123"
+      ConnectionStrings__RedisConnection: "redis:6379"
+      RabbitMQ__Host: "rabbitmq"
+
+  inventory-api:
+    build:
+      context: .
+      dockerfile: EasyCart.InventoryApi/Dockerfile
+
+    container_name: easycart-inventory
+
+    ports:
+      - "5004:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres123"
+      ConnectionStrings__RedisConnection: "redis:6379"
+      RabbitMQ__Host: "rabbitmq"
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: EasyCart.AuthApi/Dockerfile
+
+    container_name: easycart-auth
+
+    ports:
+      - "5000:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=postgres123"
+      ConnectionStrings__RedisConnection: "redis:6379"
+      RabbitMQ__Host: "rabbitmq"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: EasyCart.ApiGateway/Dockerfile
+
+    container_name: easycart-api-gateway
+
+    ports:
+      - "5003:8080"
+
+    depends_on:
+      jaeger:
+        condition: service_started
+      auth-api:
+        condition: service_started
+      product-api:
+        condition: service_started
+      order-api:
+        condition: service_started
+      inventory-api:
+        condition: service_started
+
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+volumes:
+  postgres_data:
+  redis_data:
+  redis_insight_data:
+  rabbitmq_data:

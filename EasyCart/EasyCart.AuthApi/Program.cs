@@ -1,4 +1,6 @@
+using EasyCart.AuthApi.Data;
 using EasyCart.AuthApi.DependencyInjection;
+using EasyCart.SharedLibrary.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.ApplyMigrations<AuthenticationDbContext>();
 app.UseAuthenticationService();
 app.UseSwagger();
 app.UseSwaggerUI();

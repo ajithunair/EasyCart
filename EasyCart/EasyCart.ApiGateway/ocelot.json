@@ -6,18 +6,18 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000
+          "Host": "easycart-auth",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "UpstreamPathTemplate": "/api/authentication/{everything}",
       "RateLimitOptions": {
         "ClientWhitelist": [],
-        "ClientIdHeader": "api-gateway",
+        "ClientIdHeader": "X-Api-Gateway",
         "EnableRateLimiting": true,
-        "Limit": 1,
-        "Period": "20s",
+        "Limit": 100,
+        "Period": "1m",
         "PeriodTimespan": 1
       }
     },
@@ -29,8 +29,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "easycart-product",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
@@ -51,8 +51,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "easycart-product",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
@@ -73,8 +73,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "easycart-product",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
@@ -92,8 +92,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "easycart-order",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
@@ -115,8 +115,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "easycart-order",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
@@ -138,8 +138,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "easycart-order",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
@@ -156,8 +156,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "easycart-inventory",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
@@ -168,11 +168,11 @@
       }
     }
   ],
-  
+
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:5003",
+    "BaseUrl": "http://easycart-api-gateway:8080", //"https://localhost:5003",
     "RateLimitOptions": {
-      "ClientIdHeader": "api-gateway",
+      "ClientIdHeader": "X-Api-Gateway",
       "QuotaExceededMessage": "Requests limit exceeded, Please try later",
       "Limit": 1,
       "Period": "20s",

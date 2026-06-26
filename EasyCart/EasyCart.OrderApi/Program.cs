@@ -1,4 +1,6 @@
+using EasyCart.OrderApi.Data;
 using EasyCart.OrderApi.DependencyInjection;
+using EasyCart.SharedLibrary.DependencyInjection;
 using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +34,7 @@ builder.Services.AddOrderApiServices(builder.Configuration);
 
 var app = builder.Build();
 
+app.ApplyMigrations<OrderDbContext>();
 app.UserOrderApiMiddlewares();
 
 // Configure the HTTP request pipeline.

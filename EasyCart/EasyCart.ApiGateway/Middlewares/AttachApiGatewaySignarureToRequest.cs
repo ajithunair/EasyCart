@@ -4,7 +4,7 @@
     {
         public async Task InvokeAsync(HttpContext context)
         {
-            context.Request.Headers["api-gateway"] = "Signed";
+            context.Request.Headers["X-Api-Gateway"] = "Signed";
             await next(context);
         }
     }
