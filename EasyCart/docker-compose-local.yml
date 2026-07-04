@@ -1,0 +1,73 @@
+
+services:
+  postgres: 
+    image: postgres:16 
+    container_name: EasyCart-postgres 
+    restart: always 
+    
+    environment: 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres123 
+      POSTGRES_DB: easycartdb  
+
+    ports: 
+      - "5432:5432" 
+
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data 
+      - /init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U postgres"] 
+      interval: 10s 
+      timeout: 5s 
+      retries: 5 
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: EasyCart_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redis_insight
+    restart: always
+    ports:
+      - "8001:5540"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      - redis
+  
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: EasyCart-rabbitmq
+    ports:
+      # RabbitMQ Broker port (MassTransit connects here)
+      - "5672:5672"
+      # RabbitMQ Management Web UI port
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      # Optional: Persists RabbitMQ data so queues aren't lost when the container stops
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: easycart-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+
+volumes:
+  postgres_data:
+  redis_data:
+  redis_insight_data:
+  rabbitmq_data:

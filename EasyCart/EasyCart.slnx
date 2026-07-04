@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
   </Folder>
   <Folder Name="/Solution Items/Infrastructure/">
     <File Path=".dockerignore" />
+    <File Path="docker-compose-local.yml" />
     <File Path="docker-compose.yml" />
     <File Path="init.sql" />
   </Folder>
