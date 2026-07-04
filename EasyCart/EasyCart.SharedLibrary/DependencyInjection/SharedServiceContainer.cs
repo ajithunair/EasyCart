@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace EasyCart.SharedLibrary.DependencyInjection
@@ -34,6 +35,9 @@ namespace EasyCart.SharedLibrary.DependencyInjection
             // Add JWT Authentication scheme
             services.AddJwtAuthentication(config);
 
+            // Add OpenTelemetry
+            services.AddSharedOpenTelemetry(config);
+
             return services;
         }
 
@@ -47,7 +51,36 @@ namespace EasyCart.SharedLibrary.DependencyInjection
 
             // Add Middleware to listen only to API Gateway
             app.UseMiddleware<ListenToOnlyApiGateway>();
+
+            // Add middleware to configure the CorrelationId 
+            app.UseMiddleware< TraceMiddleware>();
             return app;
+        }
+
+        public static void ApplyMigrations<TContext>(this IApplicationBuilder app) where TContext : DbContext
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<TContext>>();
+
+            try
+            {
+                var context = scope.ServiceProvider.GetRequiredService<TContext>();
+
+                context.Database.Migrate();
+
+                logger.LogInformation("Database migration completed for {Context}",
+                    typeof(TContext).Name);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Database migration failed for {Context}",
+                    typeof(TContext).Name);
+
+                throw;
+            }
         }
     }
 }

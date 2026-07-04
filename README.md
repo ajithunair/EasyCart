@@ -1,12 +1,20 @@
-# EasyCart - Microservices E-Commerce Platform
+# EasyCart - Enterprise Microservices E-Commerce Platform
 
 ## Overview
 
 EasyCart is a microservices-based e-commerce backend application built using ASP.NET Core and modern cloud-native architectural patterns.
 
-The project demonstrates how to design, develop, and integrate multiple independent services using API Gateway, JWT Authentication, Role-Based Authorization, Centralized Logging, Caching, Rate Limiting, Resiliency Patterns, and Shared Infrastructure components.
+The project demonstrates enterprise-grade concepts including:
 
-The solution is designed as a learning and reference project for building scalable enterprise-grade microservices using .NET.
+* Microservices Architecture
+* API Gateway Pattern
+* JWT Authentication & Authorization
+* Database per Service
+* Event-Driven Architecture
+* Distributed Caching
+* Observability & Distributed Tracing
+* Centralized Logging
+* Resiliency Patterns
 
 ---
 
@@ -16,23 +24,29 @@ The solution is designed as a learning and reference project for building scalab
 Client
    |
    v
-+-------------------+
-|   API Gateway     |
-|     (Ocelot)      |
-+-------------------+
-      |
-      +-------------------+
-      |                   |
-      v                   v
-+-------------+    +-------------+
-| Product API |    | Order API   |
-+-------------+    +-------------+
-      |
-      |
-      v
-+-------------+
-| Auth API    |
-+-------------+
++-----------------------+
+|    API Gateway        |
+|      Ocelot           |
++-----------------------+
+            |
+    -------------------------
+    |         |         |
+    v         v         v
++--------+ +--------+ +------------+
+| Auth   | |Product | |   Order    |
+| API    | | API    | |    API     |
++--------+ +--------+ +------------+
+               |            |
+               |            |
+           Redis Cache      |
+                            |
+                       RabbitMQ
+                            |
+                      MassTransit
+                            |
+                    +---------------+
+                    | Inventory API |
+                    +---------------+
 
 Each service owns its own database.
 ```
@@ -41,7 +55,7 @@ Each service owns its own database.
 
 # Microservices
 
-## 1. Authentication API
+## Authentication API
 
 Responsible for:
 
@@ -49,39 +63,31 @@ Responsible for:
 * User Login
 * JWT Token Generation
 * Role Management
-* Authentication & Authorization
 
 Features:
 
 * JWT Authentication
 * Role-Based Authorization
-* Secure Token Generation
 * PostgreSQL Database
-
-Example Roles:
-
-* Admin
-* User
 
 ---
 
-## 2. Product API
+## Product API
 
 Responsible for:
 
-* Product Management
 * Product CRUD Operations
-* Product Search & Retrieval
+* Product Retrieval
+* Product Management
 
 Features:
 
-* JWT Protected Endpoints
-* Role-Based Authorization
-* PostgreSQL Database
-* Global Exception Handling
+* Redis Cache
+* PostgreSQL
+* OpenTelemetry
 * Serilog Logging
 
-Example:
+Endpoints:
 
 ```http
 GET    /api/products
@@ -93,52 +99,66 @@ DELETE /api/products/{id}
 
 ---
 
-## 3. Order API
+## Order API
 
 Responsible for:
 
 * Order Creation
-* Order Tracking
 * Order Management
 
 Features:
 
-* JWT Authentication
-* Role-Based Authorization
-* PostgreSQL Database
-* Polly Resiliency Policies
-* Retry and Fault Handling
-* Global Exception Handling
+* PostgreSQL
+* Polly
+* RabbitMQ Publisher
+* OpenTelemetry
 
-Example:
+Endpoints:
 
 ```http
 GET    /api/orders
-GET    /api/orders/{id}
 POST   /api/orders
 ```
 
 ---
 
-# API Gateway (Ocelot)
+## Inventory API
 
-EasyCart uses Ocelot API Gateway as a single entry point for all client requests.
+Responsible for:
+
+* Inventory Management
+* Stock Reduction
+* Stock Updates
+
+Features:
+
+* RabbitMQ Consumer
+* MassTransit
+* PostgreSQL
+* OpenTelemetry
+
+Endpoints:
+
+```http
+GET    /api/inventory/{productId}
+POST   /api/inventory
+POST   /api/inventory/{productId}/add-stock
+POST   /api/inventory/{productId}/reduce-stock
+```
+
+---
+
+# API Gateway
+
+Ocelot is used as the API Gateway.
 
 Responsibilities:
 
 * Request Routing
-* Authentication Validation
-* Authorization
+* JWT Authentication
 * Rate Limiting
 * Response Caching
 * Centralized Access Point
-* API Aggregation (future)
-
-Benefits:
-
-* Reduced Client Complexity
-* Improved Security
-* Centralized Cross-Cutting Concerns
 
 ---
 
@@ -146,195 +166,171 @@ Benefits:
 
 ## JWT Authentication
 
-Authentication API generates JWT tokens containing:
+Features:
 
-* User Information
-* Roles
-* Expiration
-* Issuer & Audience
+* Token-based authentication
+* Role-based authorization
+* Secure API access
 
-Example Claims:
+Example:
 
 ```json
 {
   "email": "admin@example.com",
-  "name": "Admin User",
   "role": "Admin"
 }
 ```
 
 ---
 
-## Role-Based Authorization
+# Event-Driven Architecture
 
-Implemented using ASP.NET Core Authorization Policies.
+RabbitMQ and MassTransit are used for asynchronous communication.
 
-Examples:
+## Order Processing Flow
 
-```csharp
-[Authorize]
+```text
+Client
+   ↓
+Order API
+   ↓
+OrderPlacedEvent
+   ↓
+RabbitMQ
+   ↓
+Inventory Service
+   ↓
+Inventory Updated
 ```
 
-```csharp
-[Authorize(Roles = "Admin")]
+Benefits:
+
+* Loose coupling
+* Better scalability
+* Improved reliability
+* Asynchronous processing
+
+---
+
+# Redis Distributed Cache
+
+Implemented in Product API.
+
+Strategy:
+
+* Cache Aside Pattern
+
+Benefits:
+
+* Faster product retrieval
+* Reduced database load
+* Improved response times
+
+---
+
+# Observability
+
+EasyCart uses OpenTelemetry for distributed tracing.
+
+Features:
+
+* HTTP Request Tracing
+* Database Query Tracing
+* RabbitMQ Messaging Tracing
+* Consumer Tracing
+* Cross-Service Trace Propagation
+
+Technologies:
+
+* OpenTelemetry
+* OTLP Exporter
+* Jaeger
+
+---
+
+# Distributed Tracing
+
+```text
+Client
+   ↓
+Ocelot Gateway
+   ↓
+Order Service
+   ↓
+PostgreSQL
+   ↓
+RabbitMQ
+   ↓
+Inventory Service
+   ↓
+PostgreSQL
 ```
-
-Protected Operations:
-
-* Create Product
-* Update Product
-* Delete Product
-* Administrative Actions
 
 ---
 
 # Shared Library
 
-A reusable Shared Library is used across all services.
+The shared library provides:
 
-Responsibilities:
+* JWT Configuration
+* OpenTelemetry Configuration
+* Serilog Configuration
+* Global Exception Middleware
+* Trace Middleware
+* Dependency Injection Extensions
 
-## Common Components
+---
 
-* JWT Authentication Configuration
-* Database Configuration
-* Dependency Injection Registration
-* Shared Models
-* Shared DTOs
-* Shared Utilities
+# Trace Middleware
 
-## Middleware Components
+Implemented using shared middleware.
 
-### Global Exception Middleware
+Features:
 
-Provides:
+* Correlation ID generation
+* Cross-service propagation
+* Request tracking
 
-* Centralized Exception Handling
-* Consistent Error Responses
-* Structured Logging
+Header:
 
-### API Gateway Verification Middleware
-
-Provides:
-
-* API Gateway Request Validation
-* Internal Service Protection
-
-### Other Shared Middleware
-
-* Request Processing
-* Common Validation Logic
-* Custom Behaviors
+```text
+X-Correlation-Id
+```
 
 ---
 
 # Logging
 
-## Serilog
+Serilog provides:
 
-Centralized logging is implemented using Serilog.
-
-Features:
-
+* Structured Logging
 * Console Logging
-* Debug Logging
 * File Logging
-* Structured Logs
 * Error Tracking
-
-Example Log:
-
-```text
-2026-06-20 10:15:12 [INF] Product Created Successfully
-```
-
-Benefits:
-
-* Easier Troubleshooting
-* Audit Trails
-* Production Diagnostics
 
 ---
 
 # Resiliency
 
-## Polly
-
-Implemented in Order API.
+Polly is implemented in Order API.
 
 Features:
 
 * Retry Policies
 * Fault Handling
 * Temporary Failure Recovery
-* Improved Service Reliability
-
-Example Scenarios:
-
-* Database Connectivity Issues
-* Temporary Network Failures
-* Downstream Service Failures
-
----
-
-# Caching
-
-Implemented through Ocelot API Gateway.
-
-Benefits:
-
-* Faster Response Times
-* Reduced Database Calls
-* Improved Scalability
-
-Example Cached Endpoints:
-
-```http
-GET /api/products
-GET /api/products/{id}
-```
-
----
-
-# Rate Limiting
-
-Implemented through Ocelot.
-
-Purpose:
-
-* Protect APIs from abuse
-* Prevent excessive requests
-* Improve system stability
-
-Benefits:
-
-* Enhanced Security
-* Fair Resource Utilization
-* Protection Against Traffic Spikes
 
 ---
 
 # Database Design
 
-Each microservice owns its own database following the Database-Per-Service pattern.
+Database-per-service pattern.
 
-| Service            | Database   |
-| ------------------ | ---------- |
-| Authentication API | PostgreSQL |
-| Product API        | PostgreSQL |
-| Order API          | PostgreSQL |
-
-Environment:
-
-* PostgreSQL running inside Docker Containers
-* Independent schemas per service
-* Service isolation maintained
-
-Benefits:
-
-* Loose Coupling
-* Independent Scaling
-* Better Maintainability
+| Service     | Database  |
+| ----------- | --------- |
+| Auth API    | authdb    |
+| Product API | productdb |
+| Order API   | orderdb   |
 
 ---
 
@@ -359,9 +355,19 @@ Benefits:
 
 * PostgreSQL
 
-## Containerization
+## Messaging
 
-* Docker
+* RabbitMQ
+* MassTransit
+
+## Caching
+
+* Redis
+
+## Observability
+
+* OpenTelemetry
+* Jaeger
 
 ## Logging
 
@@ -371,23 +377,24 @@ Benefits:
 
 * Polly
 
-## API Testing
+## Containerization
 
-* Swagger/OpenAPI
-* Postman / Insomnia
+* Docker
 
 ---
 
-# Design Patterns & Architecture
+# Design Patterns
 
 * Microservices Architecture
 * Repository Pattern
 * Dependency Injection
-* Middleware Pattern
-* Database Per Service Pattern
 * API Gateway Pattern
-* Resiliency Pattern
-* Centralized Logging Pattern
+* Database Per Service Pattern
+* Event-Driven Architecture
+* Publisher-Subscriber Pattern
+* Distributed Cache Pattern
+* Middleware Pattern
+* Observability Pattern
 
 ---
 
@@ -397,42 +404,38 @@ Benefits:
 
 * .NET 8 SDK
 * Docker Desktop
-* PostgreSQL Docker Containers
-* Visual Studio 2022 / VS Code
+* PostgreSQL
+* RabbitMQ
+* Redis
+* Jaeger
 
-## Steps
+---
 
-1. Start PostgreSQL containers
+## Start Infrastructure
 
 ```bash
 docker compose up -d
 ```
 
-2. Run Authentication API
+---
+
+## Run Services
 
 ```bash
 dotnet run
 ```
 
-3. Run Product API
+Run:
 
-```bash
-dotnet run
-```
+* Authentication API
+* Product API
+* Order API
+* Inventory API
+* API Gateway
 
-4. Run Order API
+---
 
-```bash
-dotnet run
-```
-
-5. Run API Gateway
-
-```bash
-dotnet run
-```
-
-6. Access APIs through Gateway
+## Access Through Gateway
 
 ```http
 https://localhost:5003/api/products
@@ -440,82 +443,58 @@ https://localhost:5003/api/products
 
 ---
 
+# Jaeger Dashboard
+
+```text
+http://localhost:16686
+```
+
+Provides:
+
+* End-to-end tracing
+* Database spans
+* RabbitMQ spans
+* Cross-service observability
+
+---
+
 # Future Enhancements
 
-The following enterprise-grade features are planned:
-
-## Azure
-
-* Azure API Management (APIM)
-* Azure Application Gateway
-* Azure App Services
-* Azure Container Apps
-* Azure Kubernetes Service (AKS)
-
-## Security
-
-* Azure Key Vault
-* Managed Identity
-* Secret Rotation
-
-## Caching
-
+* Azure API Management
+* Azure Application Insights
+* Azure Service Bus
 * Azure Redis Cache
-
-## DevOps
-
+* Azure Key Vault
+* Azure App Service
+* Azure Container Apps
+* AKS
 * CI/CD Pipelines
-* GitHub Actions
-* Azure DevOps Pipelines
-
-## Containerization
-
-* Docker Multi-Stage Builds
-* Container Registry
-* Kubernetes Deployment
-
-## Monitoring & Observability
-
-* Azure Monitor
-* Application Insights
-* OpenTelemetry
-* Distributed Tracing
-* Centralized Log Analytics
-
-## Reliability
-
-* Circuit Breaker Pattern
-* Service Discovery
 * Health Checks
-
-## Scalability
-
-* Horizontal Scaling
-* Load Balancing
-* Auto Scaling
+* Notification Service
 
 ---
 
 # Learning Objectives
 
-This project demonstrates practical implementation of:
+This project demonstrates:
 
 * ASP.NET Core Microservices
 * Ocelot API Gateway
 * JWT Authentication
-* Role-Based Authorization
+* RabbitMQ Messaging
+* MassTransit
+* Redis Caching
+* OpenTelemetry
+* Jaeger
+* Distributed Tracing
+* Event-Driven Architecture
 * Serilog Logging
 * Polly Resiliency
-* PostgreSQL with Docker
-* Centralized Exception Handling
-* Rate Limiting
-* Response Caching
-* Enterprise Architecture Principles
+* PostgreSQL
+* Docker
 
 ---
 
 ## Author
 
 **Ajith Nair**
-
-
