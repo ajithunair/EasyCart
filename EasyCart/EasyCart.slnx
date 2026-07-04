@@ -1,7 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="docker-compose.yml" />
   </Folder>
   <Folder Name="/Solution Items/Infrastructure/">
     <File Path=".dockerignore" />
