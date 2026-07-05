@@ -10,11 +10,28 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 // Add OpenTelemetry
-builder.Services.AddSharedOpenTelemetry(builder.Configuration); 
+builder.Services.AddSharedOpenTelemetry(builder.Configuration);
 
-builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
-builder.Configuration.AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
-builder.Services.AddOcelot().AddCacheManager(x => x.WithDictionaryHandle());
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
+        optional: true,
+        reloadOnChange: true)
+
+    .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json",
+        optional: true,
+        reloadOnChange: true)
+
+    .AddEnvironmentVariables();
+
+builder.Services
+    .AddOcelot(builder.Configuration)
+    .AddCacheManager(x =>
+    {
+        x.WithDictionaryHandle();
+    });
+
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddCors(options =>
@@ -32,7 +49,10 @@ var app = builder.Build();
 
 app.UseMiddleware<TraceMiddleware>();
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors();
 app.UseAuthentication();

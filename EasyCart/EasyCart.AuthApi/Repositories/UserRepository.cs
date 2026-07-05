@@ -51,7 +51,16 @@ namespace EasyCart.AuthApi.Repositories
 
         private string GenerateToken(AppUser user)
         {
-            var key = Encoding.UTF8.GetBytes(config["Jwt:SecretKey"]!.ToString());
+            var secretKey = config["Jwt:SecretKey"]
+                ?? throw new InvalidOperationException("JWT SecretKey is not configured.");
+
+            var issuer = config["Jwt:Issuer"]
+                ?? throw new InvalidOperationException("JWT Issuer is not configured.");
+
+            var audience = config["Jwt:Audience"]
+                ?? throw new InvalidOperationException("JWT Audience is not configured.");
+
+            var key = Encoding.UTF8.GetBytes(secretKey);
             var securityKey = new SymmetricSecurityKey(key);
             var credentials=new SigningCredentials(securityKey,SecurityAlgorithms.HmacSha256);
 
@@ -66,8 +75,8 @@ namespace EasyCart.AuthApi.Repositories
             }
 
             var token = new JwtSecurityToken(
-                issuer: config["Jwt:Issuer"],
-                audience: config["Jwt:Audience"],
+                issuer: issuer,
+                audience: audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
