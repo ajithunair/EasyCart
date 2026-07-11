@@ -81,14 +81,14 @@ namespace EasyCart.OrderApi.Repositories
             }
         }
 
-        public async Task<Order> FindByIdAsync(int id)
+        public async Task<Order?> FindByIdAsync(int id)
         {
             try
             {
                 var order = await context.Orders.FindAsync(id);
                 if (order is null)
                 {
-                    return null!;
+                    return null;
                 }
                 return order;
             }
@@ -170,14 +170,14 @@ namespace EasyCart.OrderApi.Repositories
             }
         }
 
-        public async Task<Order> GetByAsync(Expression<Func<Order, bool>> predicate)
+        public async Task<Order?> GetByAsync(Expression<Func<Order, bool>> predicate)
         {
             try
             {
                 var order = await context.Orders.AsNoTracking().Where(predicate).FirstOrDefaultAsync();
                 if (order is null)
                 {
-                    return null!;
+                    return null;
                 }
                 return order;
             }

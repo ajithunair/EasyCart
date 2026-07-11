@@ -1,5 +1,4 @@
-﻿using EasyCart.InventoryApi.Data;
-using EasyCart.InventoryApi.Interfaces;
+using EasyCart.InventoryApi.Data;
 using EasyCart.SharedLibrary.Logs;
 using EasyCart.SharedLibrary.RabbitMQ.Events;
 using MassTransit;
@@ -15,22 +14,31 @@ namespace EasyCart.InventoryApi.RabbitMQ.Consumers
         {
             try
             {
-                var correlationId = context.Headers.Get<string>("CorrelationId");
                 var message = context.Message;
 
                 Console.WriteLine(Activity.Current?.TraceId);
 
                 foreach (var item in message.Items)
                 {
-                    var inventory = await dbContext.Inventories.FirstOrDefaultAsync(i => i.ProductId == item.ProductId);
-                    if (inventory != null)
+                    if (item.Quantity <= 0)
                     {
-                        inventory.AvailableQuantity -= item.Quantity;
-                        inventory.UpdatedAt = DateTime.UtcNow;
+                        // Ignore malformed quantities so an invalid order event can never increase stock.
+                        continue;
                     }
 
+                    // Update the stock directly in the database so concurrent consumers cannot overwrite each other.
+                    var updatedRows = await dbContext.Inventories
+                        .Where(i => i.ProductId == item.ProductId)
+                        .ExecuteUpdateAsync(setters => setters
+                            .SetProperty(i => i.AvailableQuantity, i => i.AvailableQuantity - item.Quantity)
+                            .SetProperty(i => i.UpdatedAt, DateTime.UtcNow));
+
+                    if (updatedRows == 0)
+                    {
+                        Log.Warning("No inventory row found for ProductId {ProductId} while processing OrderId {OrderId}", item.ProductId, message.OrderId);
+                    }
                 }
-                await dbContext.SaveChangesAsync();
+
                 var logMessage = $"Processed Inventory for Order: {message.OrderId}";
                 Console.WriteLine(logMessage);
                 Log.Information(logMessage);

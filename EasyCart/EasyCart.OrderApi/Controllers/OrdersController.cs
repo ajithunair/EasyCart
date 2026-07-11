@@ -1,12 +1,12 @@
-﻿using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.DTOs;
 using EasyCart.OrderApi.DTOs.Conversions;
+using EasyCart.OrderApi.Entities;
 using EasyCart.OrderApi.Interfaces;
 using EasyCart.OrderApi.Services;
 using EasyCart.SharedLibrary.RabbitMQ.Events;
 using EasyCart.SharedLibrary.Responses;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EasyCart.OrderApi.Controllers
@@ -20,67 +20,66 @@ namespace EasyCart.OrderApi.Controllers
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
         {
             var orders = await orderInterface.GetAllAsync();
-            if (orders.Any())
-            {
-                return Ok(orders.ToDtos());  
-            }
-            return NotFound();
+            return orders.Any() ? Ok(orders.ToDtos()) : NotFound("No orders found.");
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<OrderDto>> GetOrder(int id)
         {
             var order = await orderInterface.FindByIdAsync(id);
-            if (order == null)
-                return NotFound(null);
-            return Ok(order.ToDto());
-
+            return order is null ? NotFound("Order not found.") : Ok(order.ToDto());
         }
 
         [HttpGet("client/{clientId:int}")]
         public async Task<ActionResult<OrderDto>> GetClientOrders(int clientId)
         {
-            if (clientId <= 0) return BadRequest("Invalid client Id");
+            if (clientId <= 0)
+            {
+                return BadRequest("Client id must be greater than zero.");
+            }
+
             var orders = await orderService.GetOrdersByClientIdAsync(clientId);
-            return orders.Any() ? Ok(orders) : NotFound(null);
+            return orders.Any() ? Ok(orders) : NotFound("No orders found for the requested client.");
         }
 
         [HttpGet("details/{orderId:int}")]
         public async Task<ActionResult<OrderDetailsDto>> GetOrderDetails(int orderId)
         {
-            if (orderId <= 0) return BadRequest("Invalid order Id");
-            var orders = await orderService.GetOrderDetailsAsync(orderId);
-            return orders.OrderId > 0 ? Ok(orders) : NotFound(null);
+            if (orderId <= 0)
+            {
+                return BadRequest("Order id must be greater than zero.");
+            }
+
+            var details = await orderService.GetOrderDetailsAsync(orderId);
+            return details.OrderId > 0 ? Ok(details) : NotFound("Order details not found.");
         }
 
         [HttpPost]
-        public async Task<ActionResult<SharedLibrary.Responses.Response>> CreateOrder(OrderDto orderDto)
+        public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest("Incomplete data submitted");
-            }
-
-            var response = await orderInterface.CreateAsync(orderDto.ToEntity());
+            var orderEntity = orderDto.ToEntity();
+            var response = await orderInterface.CreateAsync(orderEntity);
 
             if (response.Success)
             {
-                //Create the event payload
+                // Publish only after the order is saved so downstream consumers receive a real persisted id.
                 var orderEvent = new OrderPlacedEvent
                 {
-                    OrderId = orderDto.Id,
-                    OrderDate = DateTime.UtcNow,
+                    OrderId = orderEntity.Id,
+                    OrderDate = orderEntity.OrderDate,
                     Items =
                     [
                         new OrderItemMessage
                         {
-                            ProductId = orderDto.ProductId,
-                            Quantity = orderDto.PurchaseQuantity
+                            ProductId = orderEntity.ProductId,
+                            Quantity = orderEntity.PurchaseQuantity
                         }
                     ]
                 };
+
                 var correlationId = HttpContext.Items["CorrelationId"]?.ToString();
-                //Publish the event to RabbitMQ
+
+                // Keep the trace chain intact across the message bus.
                 await publishEndpoint.Publish(orderEvent, context =>
                 {
                     context.Headers.Set("CorrelationId", correlationId);
@@ -88,26 +87,26 @@ namespace EasyCart.OrderApi.Controllers
             }
 
             return response.Success ? Ok(response) : BadRequest(response);
-
         }
 
-        [HttpPut]
-        public async Task<ActionResult<SharedLibrary.Responses.Response>> UpdateOrder(OrderDto orderDto)
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> UpdateOrder(int id, [FromBody] OrderUpdateDto orderDto)
         {
-            if (!ModelState.IsValid)
+            if (id != orderDto.Id)
             {
-                return BadRequest("Incomplete data submitted");
+                return BadRequest("Route id does not match the payload id.");
             }
 
             var response = await orderInterface.UpdateAsync(orderDto.ToEntity());
-            return response.Success? Ok(response) : BadRequest(response);
+            return response.Success ? Ok(response) : BadRequest(response);
         }
 
-        [HttpDelete]
-        public async Task<ActionResult<SharedLibrary.Responses.Response>> DeleteOrder(OrderDto orderDto)
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> DeleteOrder(int id)
         {
-            var response = await orderInterface.DeleteAsync(orderDto.ToEntity());
-            return response.Success? Ok(response) : BadRequest(response);
+            // Deletion only needs the identifier, so callers do not have to submit the full order payload.
+            var response = await orderInterface.DeleteAsync(new Order { Id = id });
+            return response.Success ? Ok(response) : BadRequest(response);
         }
     }
 }

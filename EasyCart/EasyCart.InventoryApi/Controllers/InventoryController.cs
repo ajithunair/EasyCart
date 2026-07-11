@@ -1,4 +1,4 @@
-﻿using EasyCart.InventoryApi.Data;
+using EasyCart.InventoryApi.Data;
 using EasyCart.InventoryApi.DTOs;
 using EasyCart.InventoryApi.DTOs.Conversions;
 using EasyCart.InventoryApi.Entities;
@@ -14,61 +14,96 @@ namespace EasyCart.InventoryApi.Controllers
     [Authorize(Roles = "Admin")]
     public class InventoryController(IInventory inventoryInterface, InventoryDbContext context) : Controller
     {
-        [HttpGet("{productId}")]
-        public async Task<Inventory> GetInventory(int productId)
+        [HttpGet("{productId:int}")]
+        public async Task<ActionResult<InventoryDto>> GetInventory(int productId)
         {
+            if (productId <= 0)
+            {
+                return BadRequest("Product id must be greater than zero.");
+            }
+
             var inventory = await inventoryInterface.GetInventoryByProductId(productId);
-            return inventory;
+            return inventory is null ? NotFound("Inventory not found.") : Ok(inventory.ToDto());
         }
 
         [HttpPost]
-        public async Task<ActionResult<Response>> CreateInventory(InventoryDto request)
+        public async Task<ActionResult<Response>> CreateInventory([FromBody] InventoryCreateDto request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             var response = await inventoryInterface.CreateAsync(request.ToEntity());
             return response.Success ? Ok(response) : BadRequest(response);
         }
 
-
-        [HttpPost("{productId}/add-stock")]
-        public async Task<ActionResult<Response>> AddStock(int productId, StockRequest request)
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<Response>> UpdateInventory(int id, [FromBody] InventoryUpdateDto request)
         {
-            var inventory = await GetInventory(productId);
-            if (inventory == null)
+            if (id != request.Id)
             {
-                return new Response { Success = false, Message = "Inventory not found." };
+                return BadRequest("Route id does not match the payload id.");
             }
 
-            inventory.AvailableQuantity += request.Quantity;
-            await context.SaveChangesAsync();
-            return new Response { Success = true, Message = "Stock added successfully." };
+            var response = await inventoryInterface.UpdateAsync(request.ToEntity());
+            return response.Success ? Ok(response) : BadRequest(response);
         }
 
-        [HttpPost("{productId}/reduce-stock")]
-        public async Task<ActionResult<Response>> ReduceStock(int productId,StockRequest request)
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<Response>> DeleteInventory(int id)
         {
-            var inventory = await GetInventory(productId);
-            if (inventory == null)
-            {
-                return new Response { Success = false, Message = "Inventory not found." };
-            }
-            if (inventory.AvailableQuantity < request.Quantity)
-            {
-                return BadRequest("Insufficient stock");
-            }
-            inventory.AvailableQuantity -= request.Quantity;
-            await context.SaveChangesAsync();
-            return new Response { Success = true, Message = "Stock updated successfully." };
+            // Inventory deletion only requires the identifier, so we keep the endpoint small and explicit.
+            var response = await inventoryInterface.DeleteAsync(new Inventory { Id = id });
+            return response.Success ? Ok(response) : BadRequest(response);
         }
 
-        //[HttpGet("low-stock")]
-        //public async Task<ActionResult<Response>> GetLowStock()
-        //{
-        //    return null;
-        //}
+        [HttpPost("{productId:int}/increase-stock")]
+        public async Task<ActionResult<Response>> IncreaseStock(int productId, [FromBody] StockIncreaseRequest request)
+        {
+            if (productId <= 0)
+            {
+                return BadRequest("Product id must be greater than zero.");
+            }
+
+            var inventory = await inventoryInterface.GetInventoryByProductId(productId);
+            if (inventory is null)
+            {
+                return NotFound("Inventory not found.");
+            }
+
+            var adjustment = request.ToAdjustment();
+
+            // Increase stock means we are explicitly adding units back into the available pool.
+            inventory.AvailableQuantity += adjustment.Quantity;
+            inventory.UpdatedAt = DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+            return Ok(new Response { Success = true, Message = "Stock increased successfully." });
+        }
+
+        [HttpPost("{productId:int}/decrease-stock")]
+        public async Task<ActionResult<Response>> DecreaseStock(int productId, [FromBody] StockDecreaseRequest request)
+        {
+            if (productId <= 0)
+            {
+                return BadRequest("Product id must be greater than zero.");
+            }
+
+            var inventory = await inventoryInterface.GetInventoryByProductId(productId);
+            if (inventory is null)
+            {
+                return NotFound("Inventory not found.");
+            }
+
+            var adjustment = request.ToAdjustment();
+
+            if (inventory.AvailableQuantity < adjustment.Quantity)
+            {
+                return BadRequest("Insufficient stock.");
+            }
+
+            // Decrease stock is intentionally guarded so we never drive the available quantity below zero.
+            inventory.AvailableQuantity -= adjustment.Quantity;
+            inventory.UpdatedAt = DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+            return Ok(new Response { Success = true, Message = "Stock decreased successfully." });
+        }
     }
 }
-

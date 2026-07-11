@@ -17,7 +17,7 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithBearerAuth();
 
 var rabbitSection = builder.Configuration.GetSection("RabbitMQ");
 

@@ -1,11 +1,7 @@
-﻿namespace EasyCart.ApiGateway.Middlewares
+namespace EasyCart.ApiGateway.Middlewares
 {
-    public class AttachApiGatewaySignarureToRequest(RequestDelegate next)
+    // Backward-compatible shim so existing Program.cs references keep working without a config-only change.
+    public class AttachApiGatewaySignarureToRequest(RequestDelegate next) : AttachApiGatewaySignatureToRequest(next)
     {
-        public async Task InvokeAsync(HttpContext context)
-        {
-            context.Request.Headers["X-Api-Gateway"] = "Signed";
-            await next(context);
-        }
     }
 }

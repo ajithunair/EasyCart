@@ -18,7 +18,7 @@ builder.Configuration
 builder.Services.AddAuthenticationApiService(builder.Configuration);
 builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithBearerAuth();
 
 var app = builder.Build();
 

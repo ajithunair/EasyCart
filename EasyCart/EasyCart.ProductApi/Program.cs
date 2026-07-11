@@ -19,7 +19,7 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithBearerAuth();
 
 builder.Services.AddProductApiServices(builder.Configuration);
 

@@ -1,10 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EasyCart.SharedLibrary.Middlewares
 {
@@ -20,25 +15,21 @@ namespace EasyCart.SharedLibrary.Middlewares
                 return;
             }
 
-            if (context.Request.Path.StartsWithSegments("/swagger"))
-            {
-                await next(context);
-                return;
-            }
-
-            if (context.Request.Path.StartsWithSegments("/health"))
+            // Allow developer tooling and basic service checks to keep working without the gateway header.
+            if (context.Request.Path.StartsWithSegments("/swagger") || context.Request.Path.StartsWithSegments("/health"))
             {
                 await next(context);
                 return;
             }
 
             var signedHeader = context.Request.Headers["X-Api-Gateway"].FirstOrDefault();
-            if (signedHeader is null)
+            if (string.IsNullOrWhiteSpace(signedHeader))
             {
                 context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
                 await context.Response.WriteAsync("Service Unavailable: This endpoint is accessible only through the API Gateway.");
                 return;
             }
+
             await next(context);
         }
     }
