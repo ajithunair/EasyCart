@@ -1,4 +1,4 @@
-﻿using EasyCart.ProductApi.Data;
+using EasyCart.ProductApi.Data;
 using EasyCart.ProductApi.Entities;
 using EasyCart.ProductApi.Interfaces;
 using EasyCart.SharedLibrary.Logs;
@@ -16,8 +16,9 @@ namespace EasyCart.ProductApi.Repositories
         {
             try
             {
-                var result = await GetByAsync(p => p.Name == entity.Name);
-                if (result != null)
+                // The database enforces uniqueness, but this fast pre-check gives a friendlier response in the common case.
+                var existingProduct = await GetByAsync(p => p.Name == entity.Name);
+                if (existingProduct is not null)
                 {
                     return new Response
                     {
@@ -25,9 +26,16 @@ namespace EasyCart.ProductApi.Repositories
                         Message = "Product with the same name already exists."
                     };
                 }
-                var product = await context.Products.AddAsync(entity);
+
+                await context.Products.AddAsync(entity);
                 await context.SaveChangesAsync();
+
                 return new Response { Success = true, Message = $"{entity.Name} created successfully." };
+            }
+            catch (DbUpdateException ex)
+            {
+                LogException.LogExceptions(ex);
+                return new Response { Success = false, Message = "A product with this name already exists." };
             }
             catch (Exception ex)
             {
@@ -41,20 +49,19 @@ namespace EasyCart.ProductApi.Repositories
             try
             {
                 var product = await context.Products.FindAsync(entity.Id);
-                if (product == null)
+                if (product is null)
                 {
                     return new Response { Success = false, Message = "Product not found." };
                 }
-                else
-                {
-                    context.Products.Remove(product);
-                    await context.SaveChangesAsync();
-                    // Invalidate the Cache
-                    var cacheKey = $"Product:{entity.Id}";
-                    await cache.RemoveAsync(cacheKey);
 
-                    return new Response { Success = true, Message = $"{product.Name} deleted successfully." };
-                }
+                context.Products.Remove(product);
+                await context.SaveChangesAsync();
+
+                // Remove the cached item so a future read cannot serve stale product data.
+                var cacheKey = GetCacheKey(entity.Id);
+                await cache.RemoveAsync(cacheKey);
+
+                return new Response { Success = true, Message = $"{product.Name} deleted successfully." };
             }
             catch (Exception ex)
             {
@@ -63,40 +70,33 @@ namespace EasyCart.ProductApi.Repositories
             }
         }
 
-        public async Task<Product> FindByIdAsync(int id)
+        public async Task<Product?> FindByIdAsync(int id)
         {
-            string cacheKey = $"Product:{id}";
+            var cacheKey = GetCacheKey(id);
             try
             {
-                // Try to fetch data from Redis Cache
-                string? cachedProduct = await cache.GetStringAsync(cacheKey);
-                if(!string.IsNullOrEmpty(cachedProduct))
+                // Try Redis first so hot product lookups stay fast.
+                var cachedProduct = await cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrWhiteSpace(cachedProduct))
                 {
-                    // CACHE HIT: Deserialize the JSON string back into the Product object
-                    var productFromCache = JsonSerializer.Deserialize<Product>(cachedProduct);
-                    return productFromCache!;
+                    return JsonSerializer.Deserialize<Product>(cachedProduct);
                 }
 
-                // CACHE MISS: Fetch from PostgreSQL database
                 var product = await context.Products.FindAsync(id);
-
-                if(product != null)
+                if (product is not null)
                 {
-                    // Configure Cache Expiration Options
                     var cacheOptions = new DistributedCacheEntryOptions
                     {
-                        // Absolute Expiration: The cache expires exactly 10 minutes from now no matter what
+                        // Keep the cached entry short-lived so updates become visible quickly.
                         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                        // Sliding Expiration: Keeps the cache alive for an extra 2 mins if someone accesses it
                         SlidingExpiration = TimeSpan.FromMinutes(10)
                     };
 
-                    // Serialize object to JSON string and save to Redis
-                    string serializedProduct = JsonSerializer.Serialize(product);
+                    var serializedProduct = JsonSerializer.Serialize(product);
                     await cache.SetStringAsync(cacheKey, serializedProduct, cacheOptions);
-
                 }
-                return product!;
+
+                return product;
             }
             catch (Exception ex)
             {
@@ -107,11 +107,9 @@ namespace EasyCart.ProductApi.Repositories
 
         public async Task<IEnumerable<Product>> GetAllAsync()
         {
-
             try
             {
-                var products = await context.Products.AsNoTracking().ToListAsync();
-                return products;
+                return await context.Products.AsNoTracking().ToListAsync();
             }
             catch (Exception ex)
             {
@@ -120,12 +118,11 @@ namespace EasyCart.ProductApi.Repositories
             }
         }
 
-        public async Task<Product> GetByAsync(Expression<Func<Product, bool>> predicate)
+        public async Task<Product?> GetByAsync(Expression<Func<Product, bool>> predicate)
         {
             try
             {
-                var product = await context.Products.FirstOrDefaultAsync(predicate);
-                return product!;
+                return await context.Products.FirstOrDefaultAsync(predicate);
             }
             catch (Exception ex)
             {
@@ -139,22 +136,28 @@ namespace EasyCart.ProductApi.Repositories
             try
             {
                 var product = await context.Products.FindAsync(entity.Id);
-                if (product == null)
+                if (product is null)
                 {
                     return new Response { Success = false, Message = "Product not found." };
                 }
 
-                // Update the product properties
+                // Copy the incoming values onto the tracked entity so EF Core can generate a clean update statement.
                 product.Name = entity.Name;
                 product.Price = entity.Price;
                 product.Quantity = entity.Quantity;
 
                 await context.SaveChangesAsync();
-                // Invalidate the Cache
-                var cacheKey = $"Product:{entity.Id}";
+
+                // Clear the cached item so reads will repopulate with the latest values.
+                var cacheKey = GetCacheKey(entity.Id);
                 await cache.RemoveAsync(cacheKey);
 
                 return new Response { Success = true, Message = $"{product.Name} updated successfully." };
+            }
+            catch (DbUpdateException ex)
+            {
+                LogException.LogExceptions(ex);
+                return new Response { Success = false, Message = "A product with this name already exists." };
             }
             catch (Exception ex)
             {
@@ -162,5 +165,7 @@ namespace EasyCart.ProductApi.Repositories
                 return new Response { Success = false, Message = "An error occurred while updating the product." };
             }
         }
+
+        private static string GetCacheKey(int id) => $"Product:{id}";
     }
 }

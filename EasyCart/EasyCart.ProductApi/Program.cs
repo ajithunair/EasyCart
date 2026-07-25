@@ -10,8 +10,16 @@ var connectionString = builder.Configuration.GetConnectionString("RedisConnectio
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
+        optional: true,
+        reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerWithBearerAuth();
 
 builder.Services.AddProductApiServices(builder.Configuration);
 

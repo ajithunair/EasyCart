@@ -1,4 +1,4 @@
-﻿using EasyCart.SharedLibrary.Logs;
+using EasyCart.SharedLibrary.Logs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -10,64 +10,75 @@ namespace EasyCart.SharedLibrary.Middlewares
     {
         public async Task InvokeAsync(HttpContext context)
         {
-            string message = $"An unexpected error occurred while processing the request: {context.Request.Path}";
-            int statusCode = (int)HttpStatusCode.InternalServerError;
-            string title = "Error";
+            var defaultTitle = "Error";
+            var defaultMessage = $"An unexpected error occurred while processing the request: {context.Request.Path}";
+            var statusCode = (int)HttpStatusCode.InternalServerError;
+            var title = defaultTitle;
+            var message = defaultMessage;
+
             try
             {
                 await next(context);
 
-                if(context.Response.StatusCode == StatusCodes.Status429TooManyRequests)
+                // If the pipeline already started streaming a response, we cannot safely rewrite it here.
+                if (context.Response.HasStarted)
                 {
+                    return;
+                }
+
+                if (context.Response.StatusCode == StatusCodes.Status429TooManyRequests)
+                {
+                    title = "Warning";
                     message = $"Too many requests. Please try again later: {context.Request.Path}";
                     statusCode = context.Response.StatusCode;
-                    title = "Warning";
-
-                    await ModifyHeader(context, title, message, statusCode);
+                    await WriteProblemDetailsAsync(context, title, message, statusCode);
                 }
-                
-                if(context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+                else if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
                 {
+                    title = "Unauthorized";
                     message = $"Unauthorized access. Please check your credentials: {context.Request.Path}";
                     statusCode = context.Response.StatusCode;
-                    title = "Unauthorized";
-                    await ModifyHeader(context, title, message, statusCode);
+                    await WriteProblemDetailsAsync(context, title, message, statusCode);
                 }
-
-                if(context.Response.StatusCode == StatusCodes.Status403Forbidden)
+                else if (context.Response.StatusCode == StatusCodes.Status403Forbidden)
                 {
+                    title = "Forbidden";
                     message = $"Forbidden access. You do not have permission to access this resource: {context.Request.Path}";
                     statusCode = context.Response.StatusCode;
-                    title = "Forbidden";
-                    await ModifyHeader(context, title, message, statusCode);
+                    await WriteProblemDetailsAsync(context, title, message, statusCode);
                 }
             }
             catch (Exception ex)
             {
                 LogException.LogExceptions(ex);
 
-                if(ex is TaskCanceledException || ex is TimeoutException)
+                if (ex is TaskCanceledException || ex is TimeoutException)
                 {
-                    message = $"Request timed out. Please try again later: {context.Request.Path}";
-                    statusCode = (int)HttpStatusCode.RequestTimeout;
                     title = "Request Timeout";
+                    message = $"Request timed out. Please try again later: {context.Request.Path}";
+                    statusCode = StatusCodes.Status408RequestTimeout;
                 }
 
-                await ModifyHeader(context, title, message, statusCode);
+                if (!context.Response.HasStarted)
+                {
+                    await WriteProblemDetailsAsync(context, title, message, statusCode);
+                }
             }
         }
 
-        private async Task ModifyHeader(HttpContext context, string title, string message, int statusCode)
+        private static async Task WriteProblemDetailsAsync(HttpContext context, string title, string message, int statusCode)
         {
+            context.Response.Clear();
+            context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
+
+            // ProblemDetails gives every service a consistent JSON error envelope.
             await context.Response.WriteAsync(JsonSerializer.Serialize(new ProblemDetails
             {
                 Title = title,
                 Detail = message,
                 Status = statusCode
             }), CancellationToken.None);
-
-            return;
         }
     }
 }

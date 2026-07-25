@@ -5,7 +5,31 @@ namespace EasyCart.OrderApi.DTOs.Conversions
 {
     public static class OrderConversion
     {
-        public static Order ToEntity(this OrderDto orderDto) {
+        public static Order ToEntity(this OrderDto orderDto)
+        {
+            return new Order
+            {
+                Id = orderDto.Id,
+                ProductId = orderDto.ProductId,
+                ClientId = orderDto.ClientId,
+                PurchaseQuantity = orderDto.PurchaseQuantity,
+                OrderDate = orderDto.OrderDate
+            };
+        }
+
+        public static Order ToEntity(this OrderCreateDto orderDto)
+        {
+            return new Order
+            {
+                ProductId = orderDto.ProductId,
+                ClientId = orderDto.ClientId,
+                PurchaseQuantity = orderDto.PurchaseQuantity,
+                OrderDate = DateTime.UtcNow
+            };
+        }
+
+        public static Order ToEntity(this OrderUpdateDto orderDto)
+        {
             return new Order
             {
                 Id = orderDto.Id,

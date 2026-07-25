@@ -48,12 +48,12 @@ namespace EasyCart.InventoryApi.Repositories
             }
         }
 
-        public async Task<Inventory> FindByIdAsync(int id)
+        public async Task<Inventory?> FindByIdAsync(int id)
         {
             try
             {
                 var inventory = await context.Inventories.FindAsync(id);
-                return inventory!;
+                return inventory;
             }
             catch (Exception ex)
             {
@@ -76,12 +76,12 @@ namespace EasyCart.InventoryApi.Repositories
             }
         }
 
-        public async Task<Inventory> GetByAsync(Expression<Func<Inventory, bool>> predicate)
+        public async Task<Inventory?> GetByAsync(Expression<Func<Inventory, bool>> predicate)
         {
             try
             {
                 var inventory = await context.Inventories.FirstOrDefaultAsync(predicate);
-                return inventory!;
+                return inventory;
             }
             catch (Exception ex)
             {
@@ -116,12 +116,12 @@ namespace EasyCart.InventoryApi.Repositories
             }
         }
 
-        public async Task<Inventory> GetInventoryByProductId(int productId)
+        public async Task<Inventory?> GetInventoryByProductId(int productId)
         {
             try
             {
                 var inventory = await context.Inventories.FirstOrDefaultAsync(i => i.ProductId == productId);
-                return inventory!;
+                return inventory;
             }
             catch (Exception ex)
             {

@@ -20,6 +20,27 @@ namespace EasyCart.ProductApi.DTOs.Conversions
             };
         }
 
+        public static Product ToEntity(this ProductCreateDTO productDTO)
+        {
+            return new Product
+            {
+                Name = productDTO.Name,
+                Quantity = productDTO.Quantity,
+                Price = productDTO.Price
+            };
+        }
+
+        public static Product ToEntity(this ProductUpdateDTO productDTO)
+        {
+            return new Product
+            {
+                Id = productDTO.Id,
+                Name = productDTO.Name,
+                Quantity = productDTO.Quantity,
+                Price = productDTO.Price
+            };
+        }
+
         public static IEnumerable<ProductDTO> ToDTOs(this IEnumerable<Product> products)
         {
             return products.Select(ToDTO);

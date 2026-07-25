@@ -8,6 +8,15 @@ namespace EasyCart.SharedLibrary.DependencyInjection
     {
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
         {
+            var secretKey = config["Jwt:SecretKey"]
+                ?? throw new InvalidOperationException("JWT SecretKey is not configured.");
+
+            var issuer = config["Jwt:Issuer"]
+                ?? throw new InvalidOperationException("JWT Issuer is not configured.");
+
+            var audience = config["Jwt:Audience"]
+                ?? throw new InvalidOperationException("JWT Audience is not configured.");
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
@@ -20,10 +29,10 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = config["Jwt:Issuer"],
-                    ValidAudience = config["Jwt:Audience"],
+                    ValidIssuer = issuer,
+                    ValidAudience = audience,
                     IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-                        System.Text.Encoding.UTF8.GetBytes(config["Jwt:SecretKey"]))
+                        System.Text.Encoding.UTF8.GetBytes(secretKey))
                 };
             });
 

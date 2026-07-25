@@ -6,8 +6,8 @@ services:
     restart: always 
     
     environment: 
-      POSTGRES_USER: postgres 
-      POSTGRES_PASSWORD: postgres123 
+      POSTGRES_USER: ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
       POSTGRES_DB: authdb  
 
     ports: 
@@ -18,7 +18,7 @@ services:
       - /init.sql:/docker-entrypoint-initdb.d/init.sql
 
     healthcheck: 
-      test: ["CMD-SHELL", "pg_isready -U postgres"] 
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"] 
       interval: 10s 
       timeout: 5s 
       retries: 5 
@@ -52,8 +52,8 @@ services:
       # RabbitMQ Management Web UI port
       - "15672:15672"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     volumes:
       # Optional: Persists RabbitMQ data so queues aren't lost when the container stops
       - rabbitmq_data:/var/lib/rabbitmq
@@ -87,11 +87,21 @@ services:
         condition: service_started
 
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres123"
-      ConnectionStrings__RedisConnection: "redis:6379"
-      RabbitMQ__Host: "rabbitmq"
+
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      Jwt__SecretKey: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+
+      OpenTelemetry__Endpoint: http://jaeger:4317
 
   order-api:
     build:
@@ -114,11 +124,23 @@ services:
         condition: service_started
 
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=orderdb;Username=postgres;Password=postgres123"
-      ConnectionStrings__RedisConnection: "redis:6379"
-      RabbitMQ__Host: "rabbitmq"
+
+      ApiGateway__BaseUrl: ${API_GATEWAY_BASEURL}
+
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=orderdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      Jwt__SecretKey: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+
+      OpenTelemetry__Endpoint: http://jaeger:4317
 
   inventory-api:
     build:
@@ -141,11 +163,21 @@ services:
         condition: service_started
 
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres123"
-      ConnectionStrings__RedisConnection: "redis:6379"
-      RabbitMQ__Host: "rabbitmq"
+
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=productdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      Jwt__SecretKey: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+
+      OpenTelemetry__Endpoint: http://jaeger:4317
 
   auth-api:
     build:
@@ -167,17 +199,22 @@ services:
       jaeger:
         condition: service_started
 
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      retries: 5
-
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=authdb;Username=postgres;Password=postgres123"
-      ConnectionStrings__RedisConnection: "redis:6379"
-      RabbitMQ__Host: "rabbitmq"
+
+      ConnectionStrings__EasyCartConnection: "Host=postgres;Port=5432;Database=authdb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      ConnectionStrings__RedisConnection: ${REDIS_CONNECTION}
+
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+
+      Jwt__SecretKey: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+
+      OpenTelemetry__Endpoint: http://jaeger:4317
 
   api-gateway:
     build:
@@ -203,7 +240,13 @@ services:
 
     environment:
       ASPNETCORE_URLS: http://+:8080
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
+
+      OpenTelemetry__Endpoint: http://jaeger:4317
+
+      Jwt__SecretKey: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
 
 volumes:
   postgres_data:

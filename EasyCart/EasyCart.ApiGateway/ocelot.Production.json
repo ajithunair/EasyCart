@@ -5,8 +5,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000
+          "Host": "auth-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST" ],
@@ -20,37 +20,56 @@
         "PeriodTimespan": 1
       }
     },
+
     {
       "DownstreamPathTemplate": "/api/products",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "product-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/products"
+      "UpstreamPathTemplate": "/api/products",
+      "RateLimitOptions": {
+        "EnableRateLimiting": false
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EasyCart-Caching-Control"
+      }
     },
+
     {
       "DownstreamPathTemplate": "/api/products/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "product-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/products/{id}"
+      "UpstreamPathTemplate": "/api/products/{id}",
+      "RateLimitOptions": {
+        "EnableRateLimiting": false
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 60,
+        "Region": "default",
+        "Header": "EasyCart-Product-Caching-Control"
+      }
     },
+
     {
       "DownstreamPathTemplate": "/api/products/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5001
+          "Host": "product-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
@@ -60,63 +79,93 @@
         "AuthenticationProviderKey": "Bearer"
       }
     },
+
     {
       "DownstreamPathTemplate": "/api/orders",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "order-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders"
+      "UpstreamPathTemplate": "/api/orders",
+      "FileCacheOptions": {
+        "TtlSeconds": 10,
+        "Region": "default",
+        "Header": "EasyCart-Order-Caching-Control"
+      },
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
+
     {
       "DownstreamPathTemplate": "/api/orders/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "order-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders/{id}"
+      "UpstreamPathTemplate": "/api/orders/{id}",
+      "FileCacheOptions": {
+        "TtlSeconds": 10,
+        "Region": "default",
+        "Header": "EasyCart-Product-Caching-Control"
+      },
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
+
     {
       "DownstreamPathTemplate": "/api/orders/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5002
+          "Host": "order-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/orders/{url}"
+      "UpstreamPathTemplate": "/api/orders/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
+
     {
       "DownstreamPathTemplate": "/api/inventory/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5004
+          "Host": "inventory-api",
+          "Port": 8080
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/inventory/{url}"
+      "UpstreamPathTemplate": "/api/inventory/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     }
   ],
+
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:5003",
-    "RateLimitOptions": {
-      "ClientIdHeader": "X-Api-Gateway",
-      "QuotaExceededMessage": "Requests limit exceeded, Please try later",
-      "Limit": 5,
-      "Period": "1m",
-      "PeriodTimespan": 5
-    }
+    "BaseUrl": ""
+  },
+
+  "QoSOptions": {
+    "ExceptionsAllowedBeforeBreaking": 3,
+    "DurationOfBreak": 5000,
+    "TimeoutValue": 5000
   }
 }
