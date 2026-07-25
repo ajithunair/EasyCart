@@ -59,6 +59,45 @@ namespace EasyCart.OrderApi.Migrations
             {
                 b.Navigation("Items");
             });
+
+            modelBuilder.Entity("EasyCart.OrderApi.Entities.Cart", b =>
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("integer");
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                b.Property<int>("ClientId").HasColumnType("integer");
+                b.Property<DateTime>("UpdatedAt").HasColumnType("timestamp with time zone");
+                b.HasKey("Id");
+                b.HasIndex("ClientId").IsUnique();
+                b.ToTable("Carts");
+            });
+
+            modelBuilder.Entity("EasyCart.OrderApi.Entities.CartItem", b =>
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("integer");
+                NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                b.Property<int>("CartId").HasColumnType("integer");
+                b.Property<int>("ProductId").HasColumnType("integer");
+                b.Property<int>("Quantity").HasColumnType("integer");
+                b.HasKey("Id");
+                b.HasIndex("CartId");
+                b.HasIndex("CartId", "ProductId").IsUnique();
+                b.ToTable("CartItems");
+            });
+
+            modelBuilder.Entity("EasyCart.OrderApi.Entities.CartItem", b =>
+            {
+                b.HasOne("EasyCart.OrderApi.Entities.Cart", "Cart")
+                    .WithMany("Items")
+                    .HasForeignKey("CartId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+                b.Navigation("Cart");
+            });
+
+            modelBuilder.Entity("EasyCart.OrderApi.Entities.Cart", b =>
+            {
+                b.Navigation("Items");
+            });
 #pragma warning restore 612, 618
         }
     }

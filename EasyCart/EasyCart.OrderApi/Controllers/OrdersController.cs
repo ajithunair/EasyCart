@@ -75,7 +75,7 @@ namespace EasyCart.OrderApi.Controllers
             }
 
             var details = await orderService.GetOrderDetailsAsync(orderId);
-            return details.OrderId > 0 ? Ok(details) : NotFound("Order details not found.");
+            return (details != null && details.OrderId > 0) ? Ok(details) : NotFound("Order details not found.");
         }
 
         [HttpPost]

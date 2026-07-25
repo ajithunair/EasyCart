@@ -8,5 +8,6 @@ namespace EasyCart.OrderApi.Services
         Task<IEnumerable<OrderDto>> GetOrdersByClientIdAsync(int clientId);
         Task<OrderDetailsDto> GetOrderDetailsAsync(int orderId);
         Task<Order?> BuildOrderAsync(OrderCreateDto request, int clientId);
+        Task<ProductDto> GetProductByIdAsync(int productId);
     }
 }
