@@ -17,12 +17,12 @@ namespace EasyCart.OrderApi.DTOs.Conversions
             };
         }
 
-        public static Order ToEntity(this OrderCreateDto orderDto)
+        public static Order ToEntity(this OrderCreateDto orderDto, int clientId)
         {
             return new Order
             {
                 ProductId = orderDto.ProductId,
-                ClientId = orderDto.ClientId,
+                ClientId = clientId,
                 PurchaseQuantity = orderDto.PurchaseQuantity,
                 OrderDate = DateTime.UtcNow
             };

@@ -8,6 +8,7 @@ using EasyCart.SharedLibrary.Responses;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EasyCart.OrderApi.Controllers
 {
@@ -19,7 +20,9 @@ namespace EasyCart.OrderApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
         {
-            var orders = await orderInterface.GetAllAsync();
+            var orders = User.IsInRole("Admin")
+                ? await orderInterface.GetAllAsync()
+                : await orderInterface.GetOrdersAsync(o => o.ClientId == GetAuthenticatedUserId());
             return orders.Any() ? Ok(orders.ToDtos()) : NotFound("No orders found.");
         }
 
@@ -27,6 +30,11 @@ namespace EasyCart.OrderApi.Controllers
         public async Task<ActionResult<OrderDto>> GetOrder(int id)
         {
             var order = await orderInterface.FindByIdAsync(id);
+            if (order is not null && !CanAccess(order.ClientId))
+            {
+                return Forbid();
+            }
+
             return order is null ? NotFound("Order not found.") : Ok(order.ToDto());
         }
 
@@ -36,6 +44,11 @@ namespace EasyCart.OrderApi.Controllers
             if (clientId <= 0)
             {
                 return BadRequest("Client id must be greater than zero.");
+            }
+
+            if (!User.IsInRole("Admin") && clientId != GetAuthenticatedUserId())
+            {
+                return Forbid();
             }
 
             var orders = await orderService.GetOrdersByClientIdAsync(clientId);
@@ -50,6 +63,17 @@ namespace EasyCart.OrderApi.Controllers
                 return BadRequest("Order id must be greater than zero.");
             }
 
+            var order = await orderInterface.FindByIdAsync(orderId);
+            if (order is null)
+            {
+                return NotFound("Order details not found.");
+            }
+
+            if (!CanAccess(order.ClientId))
+            {
+                return Forbid();
+            }
+
             var details = await orderService.GetOrderDetailsAsync(orderId);
             return details.OrderId > 0 ? Ok(details) : NotFound("Order details not found.");
         }
@@ -57,7 +81,7 @@ namespace EasyCart.OrderApi.Controllers
         [HttpPost]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
-            var orderEntity = orderDto.ToEntity();
+            var orderEntity = orderDto.ToEntity(GetAuthenticatedUserId());
             var response = await orderInterface.CreateAsync(orderEntity);
 
             if (response.Success)
@@ -92,6 +116,11 @@ namespace EasyCart.OrderApi.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> UpdateOrder(int id, [FromBody] OrderUpdateDto orderDto)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             if (id != orderDto.Id)
             {
                 return BadRequest("Route id does not match the payload id.");
@@ -104,9 +133,24 @@ namespace EasyCart.OrderApi.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> DeleteOrder(int id)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             // Deletion only needs the identifier, so callers do not have to submit the full order payload.
             var response = await orderInterface.DeleteAsync(new Order { Id = id });
             return response.Success ? Ok(response) : BadRequest(response);
         }
+
+        private int GetAuthenticatedUserId()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(userId, out var parsedUserId) && parsedUserId > 0
+                ? parsedUserId
+                : throw new InvalidOperationException("Authenticated user id is missing from the token.");
+        }
+
+        private bool CanAccess(int clientId) => User.IsInRole("Admin") || clientId == GetAuthenticatedUserId();
     }
 }

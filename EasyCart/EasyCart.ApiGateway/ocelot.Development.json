@@ -70,7 +70,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders"
+      "UpstreamPathTemplate": "/api/orders",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/orders/{id}",
@@ -82,7 +86,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders/{id}"
+      "UpstreamPathTemplate": "/api/orders/{id}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/orders/{url}",
@@ -94,7 +102,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/orders/{url}"
+      "UpstreamPathTemplate": "/api/orders/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/inventory/{url}",

@@ -1,4 +1,8 @@
-﻿namespace EasyCart.AuthApi.DTOs
+using System.ComponentModel.DataAnnotations;
+
+namespace EasyCart.AuthApi.DTOs
 {
-    public record LoginDto(string Email, string Password);
+    public record LoginDto(
+        [Required, EmailAddress] string Email,
+        [Required] string Password);
 }

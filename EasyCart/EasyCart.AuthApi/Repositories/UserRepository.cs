@@ -66,10 +66,11 @@ namespace EasyCart.AuthApi.Repositories
 
             var claims = new List<Claim>
             {
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Email, user.Email),
                 new(ClaimTypes.Name, user.Name)
             };
-            if (!string.IsNullOrEmpty(user.Role) || !Equals("string", user.Role))
+            if (!string.IsNullOrWhiteSpace(user.Role))
             {
                 claims.Add(new(ClaimTypes.Role, user.Role));
             }
@@ -99,7 +100,8 @@ namespace EasyCart.AuthApi.Repositories
                 Email= appUserDto.Email,
                 Address= appUserDto.Address,
                 PhoneNumber= appUserDto.PhoneNumber,
-                Role= appUserDto.Role,
+                // Public registration always creates a customer. Admin accounts must be provisioned separately.
+                Role = "Customer",
                 Password=BCrypt.Net.BCrypt.HashPassword(appUserDto.Password)
             });
 
