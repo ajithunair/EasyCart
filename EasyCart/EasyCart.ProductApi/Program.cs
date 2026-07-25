@@ -1,13 +1,15 @@
+using EasyCart.ProductApi.Data;
 using EasyCart.ProductApi.DependencyInjection;
+using EasyCart.SharedLibrary.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("RedisConnection");
 
+// Add services to the container.
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -25,7 +27,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
+app.ApplyMigrations<ProductDbContext>();
 app.UseProductApiMiddlewares();
 
 if (app.Environment.IsDevelopment())

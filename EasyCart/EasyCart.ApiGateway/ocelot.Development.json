@@ -1,13 +1,12 @@
 {
   "Routes": [
-    //Authentication
     {
       "DownstreamPathTemplate": "/api/authentication/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-auth",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5000
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST" ],
@@ -21,60 +20,37 @@
         "PeriodTimespan": 1
       }
     },
-
-    //Profuct Api
-    //GET method
     {
       "DownstreamPathTemplate": "/api/products/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-product",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/products/",
-      "RateLimitOptions": {
-        "EnableRateLimiting": false
-      },
-      "FileCacheOptions": {
-        "TtlSeconds": 60,
-        "Region": "default",
-        "Header": "EasyCart-Caching-Control"
-      }
+      "UpstreamPathTemplate": "/api/products/"
     },
-
-    //GET Product By Id method
     {
       "DownstreamPathTemplate": "/api/products/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-product",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/products/{id}",
-      "RateLimitOptions": {
-        "EnableRateLimiting": false
-      },
-      "FileCacheOptions": {
-        "TtlSeconds": 60,
-        "Region": "default",
-        "Header": "EasyCart-Product-Caching-Control"
-      }
+      "UpstreamPathTemplate": "/api/products/{id}"
     },
-
-    //Product => POST, PUT, DELETE --> All
     {
       "DownstreamPathTemplate": "/api/products/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-product",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
@@ -84,93 +60,57 @@
         "AuthenticationProviderKey": "Bearer"
       }
     },
-
-    //Order Api
-    //GET method
     {
       "DownstreamPathTemplate": "/api/orders/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-order",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5002
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders/",
-      "FileCacheOptions": {
-        "TtlSeconds": 10,
-        "Region": "default",
-        "Header": "EasyCart-Order-Caching-Control"
-      },
-      "AuthenticationOptions": {
-        "AllowedScopes": [],
-        "AuthenticationProviderKey": "Bearer"
-      }
+      "UpstreamPathTemplate": "/api/orders/"
     },
-
-    //GET By Id
     {
       "DownstreamPathTemplate": "/api/orders/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-order",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5002
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders/{id}",
-      "FileCacheOptions": {
-        "TtlSeconds": 10,
-        "Region": "default",
-        "Header": "EasyCart-Product-Caching-Control"
-      },
-      "AuthenticationOptions": {
-        "AllowedScopes": [],
-        "AuthenticationProviderKey": "Bearer"
-      }
+      "UpstreamPathTemplate": "/api/orders/{id}"
     },
-
-    //Orders => POST, PUT, DELETE --> All
     {
       "DownstreamPathTemplate": "/api/orders/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-order",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5002
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/orders/{url}",
-      "AuthenticationOptions": {
-        "AllowedScopes": [],
-        "AuthenticationProviderKey": "Bearer"
-      }
+      "UpstreamPathTemplate": "/api/orders/{url}"
     },
-
-    //Inventory => GET, POST, PUT, DELETE --> All
     {
       "DownstreamPathTemplate": "/api/inventory/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "easycart-inventory",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5004
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/inventory/{url}",
-      "AuthenticationOptions": {
-        "AllowedScopes": [],
-        "AuthenticationProviderKey": "Bearer"
-      }
+      "UpstreamPathTemplate": "/api/inventory/{url}"
     }
   ],
-
   "GlobalConfiguration": {
-    "BaseUrl": "http://easycart-api-gateway:8080", //"https://localhost:5003",
+    "BaseUrl": "https://localhost:5003",
     "RateLimitOptions": {
       "ClientIdHeader": "X-Api-Gateway",
       "QuotaExceededMessage": "Requests limit exceeded, Please try later",

@@ -1,5 +1,7 @@
+using EasyCart.InventoryApi.Data;
 using EasyCart.InventoryApi.DependencyInjection;
 using EasyCart.InventoryApi.RabbitMQ.Consumers;
+using EasyCart.SharedLibrary.DependencyInjection;
 using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +37,7 @@ builder.Services.AddInventoryApiServices(builder.Configuration);
 
 var app = builder.Build();
 
+app.ApplyMigrations<InventoryDbContext>();
 app.UseInventoryApiMiddlewares();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

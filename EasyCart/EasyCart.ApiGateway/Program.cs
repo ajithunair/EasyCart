@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSharedOpenTelemetry(builder.Configuration); 
 
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+builder.Configuration.AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 builder.Services.AddOcelot().AddCacheManager(x => x.WithDictionaryHandle());
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
