@@ -1,6 +1,7 @@
 ﻿using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -11,11 +12,32 @@ namespace EasyCart.SharedLibrary.DependencyInjection
         public static IServiceCollection AddSharedOpenTelemetry(this IServiceCollection services, IConfiguration config)
         {
             var serviceName = config["OpenTelemetry:ServiceName"];
+            var endpoint = config["OpenTelemetry:Endpoint"];
             var appInsightsConnectionString = config["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
             services.AddOpenTelemetry()
                 .ConfigureResource(resource=>
                 resource.AddService(serviceName))
+                .WithMetrics(metrics =>
+                {
+                    metrics
+                    .AddHttpClientInstrumentation()
+                    // Instruments built-in Kestrel and ASP.NET Core metrics
+                    .AddAspNetCoreInstrumentation()
+                    // Standard OTLP Exporter targeting your Prometheus/Collector instance
+                    .AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri(endpoint);
+                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    });
+                    if (!string.IsNullOrEmpty(appInsightsConnectionString))
+                    {
+                        metrics.AddAzureMonitorMetricExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                        });
+                    }
+                })
                 .WithTracing(tracing =>
                 {
                     tracing
@@ -26,7 +48,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
 
                     .AddOtlpExporter(options =>
                     {
-                        options.Endpoint=new Uri(config["OpenTelemetry:Endpoint"]!.ToString());
+                        options.Endpoint=new Uri(endpoint);
                     });
 
                     if (!string.IsNullOrEmpty(appInsightsConnectionString))
