@@ -105,8 +105,13 @@ namespace EasyCart.OrderApi.Controllers
         }
 
         [HttpPost("checkout")]
-        public async Task<ActionResult<OrderDto>> Checkout()
+        public async Task<ActionResult<OrderDto>> Checkout(CheckoutDto checkoutDto)
         {
+            if (!string.Equals(checkoutDto.PaymentMethod, "CashOnDelivery", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only CashOnDelivery is currently supported.");
+            }
+
             var clientId = GetAuthenticatedUserId();
             var cart = await GetCartForUpdateAsync();
             if (cart is null || cart.Items.Count == 0)
@@ -118,6 +123,14 @@ namespace EasyCart.OrderApi.Controllers
             var order = await orderService.BuildOrderAsync(request, clientId);
             if (order is null)
                 return BadRequest("One or more products could not be found.");
+
+            // Payment remains pending for COD and the order remains pending until inventory confirms reservation.
+            order.PaymentMethod = "CashOnDelivery";
+            order.PaymentStatus = PaymentStatuses.Pending;
+            order.ShippingAddress = checkoutDto.ShippingAddress;
+            order.ShippingCity = checkoutDto.ShippingCity;
+            order.ShippingPostalCode = checkoutDto.ShippingPostalCode;
+            order.ShippingPhone = checkoutDto.ShippingPhone;
 
             // Npgsql uses a retrying execution strategy, so user transactions must run inside that strategy.
             var executionStrategy = context.Database.CreateExecutionStrategy();

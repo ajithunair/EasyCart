@@ -27,7 +27,18 @@ namespace EasyCart.OrderApi.Migrations
                 b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("integer");
                 NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
                 b.Property<int>("ClientId").HasColumnType("integer");
+                b.Property<DateTime?>("DeliveredAt").HasColumnType("timestamp with time zone");
                 b.Property<DateTime>("OrderDate").HasColumnType("timestamp with time zone");
+                b.Property<string>("PaymentMethod").IsRequired().HasColumnType("text");
+                b.Property<string>("PaymentStatus").IsRequired().HasColumnType("text");
+                b.Property<DateTime?>("ShippedAt").HasColumnType("timestamp with time zone");
+                b.Property<string>("ShippingAddress").IsRequired().HasColumnType("text");
+                b.Property<string>("ShippingCity").IsRequired().HasColumnType("text");
+                b.Property<string>("ShippingPhone").IsRequired().HasColumnType("text");
+                b.Property<string>("ShippingPostalCode").IsRequired().HasColumnType("text");
+                b.Property<string>("ShippingStatus").IsRequired().HasColumnType("text");
+                b.Property<string>("Status").IsRequired().HasColumnType("text");
+                b.Property<string>("TrackingNumber").HasColumnType("text");
                 b.HasKey("Id");
                 b.ToTable("Orders");
             });

@@ -1,5 +1,6 @@
 using EasyCart.OrderApi.Data;
 using EasyCart.OrderApi.DependencyInjection;
+using EasyCart.OrderApi.Messaging;
 using EasyCart.SharedLibrary.DependencyInjection;
 using MassTransit;
 
@@ -24,6 +25,7 @@ var rabbitSection = builder.Configuration.GetSection("RabbitMQ");
 //Configure MassTransit
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<OrderInventoryReservationConsumer>();
 
     x.UsingRabbitMq((context, config) =>
     {

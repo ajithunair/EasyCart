@@ -1,4 +1,5 @@
 using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.Data;
 using EasyCart.OrderApi.DTOs.Conversions;
 using EasyCart.OrderApi.Entities;
 using EasyCart.OrderApi.Interfaces;
@@ -8,6 +9,7 @@ using EasyCart.SharedLibrary.Responses;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace EasyCart.OrderApi.Controllers
@@ -15,7 +17,7 @@ namespace EasyCart.OrderApi.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class OrdersController(IOrder orderInterface, IOrderService orderService, IPublishEndpoint publishEndpoint) : ControllerBase
+    public class OrdersController(IOrder orderInterface, IOrderService orderService, IPublishEndpoint publishEndpoint, OrderDbContext context) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
@@ -146,6 +148,44 @@ namespace EasyCart.OrderApi.Controllers
             // Deletion only needs the identifier, so callers do not have to submit the full order payload.
             var response = await orderInterface.DeleteAsync(new Order { Id = id });
             return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<OrderDto>> UpdateStatus(int id, OrderStatusUpdateDto request)
+        {
+            var order = await context.Orders
+                .Include(existing => existing.Items)
+                .SingleOrDefaultAsync(existing => existing.Id == id);
+            if (order is null)
+                return NotFound("Order not found.");
+
+            var validStatuses = new[]
+            {
+                OrderStatuses.Pending,
+                OrderStatuses.Confirmed,
+                OrderStatuses.Shipped,
+                OrderStatuses.Delivered,
+                OrderStatuses.Cancelled
+            };
+            if (!validStatuses.Contains(request.Status, StringComparer.OrdinalIgnoreCase))
+                return BadRequest("Invalid order status.");
+
+            // Shipping timestamps are managed here so delivery history is consistent with the status.
+            order.Status = request.Status;
+            if (request.PaymentStatus is not null)
+                order.PaymentStatus = request.PaymentStatus;
+            if (request.ShippingStatus is not null)
+                order.ShippingStatus = request.ShippingStatus;
+            if (request.TrackingNumber is not null)
+                order.TrackingNumber = request.TrackingNumber;
+            if (string.Equals(request.Status, OrderStatuses.Shipped, StringComparison.OrdinalIgnoreCase))
+                order.ShippedAt ??= DateTime.UtcNow;
+            if (string.Equals(request.Status, OrderStatuses.Delivered, StringComparison.OrdinalIgnoreCase))
+                order.DeliveredAt ??= DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+            return Ok(order.ToDto());
         }
 
         private int GetAuthenticatedUserId()

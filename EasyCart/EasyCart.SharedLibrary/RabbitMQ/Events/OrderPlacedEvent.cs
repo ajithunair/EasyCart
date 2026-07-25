@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace EasyCart.SharedLibrary.RabbitMQ.Events
 {
     public record OrderPlacedEvent
@@ -17,5 +11,16 @@ namespace EasyCart.SharedLibrary.RabbitMQ.Events
     {
         public int ProductId { get; init; }
         public int Quantity { get; init; }
+    }
+
+    public record InventoryReservationSucceededEvent
+    {
+        public int OrderId { get; init; }
+    }
+
+    public record InventoryReservationFailedEvent
+    {
+        public int OrderId { get; init; }
+        public string Reason { get; init; } = string.Empty;
     }
 }
