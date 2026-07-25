@@ -81,7 +81,12 @@ namespace EasyCart.OrderApi.Controllers
         [HttpPost]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
-            var orderEntity = orderDto.ToEntity(GetAuthenticatedUserId());
+            var orderEntity = await orderService.BuildOrderAsync(orderDto, GetAuthenticatedUserId());
+            if (orderEntity is null)
+            {
+                return BadRequest("One or more products could not be found.");
+            }
+
             var response = await orderInterface.CreateAsync(orderEntity);
 
             if (response.Success)
@@ -93,11 +98,11 @@ namespace EasyCart.OrderApi.Controllers
                     OrderDate = orderEntity.OrderDate,
                     Items =
                     [
-                        new OrderItemMessage
+                        .. orderEntity.Items.Select(item => new OrderItemMessage
                         {
-                            ProductId = orderEntity.ProductId,
-                            Quantity = orderEntity.PurchaseQuantity
-                        }
+                            ProductId = item.ProductId,
+                            Quantity = item.Quantity
+                        })
                     ]
                 };
 

@@ -1,11 +1,18 @@
 namespace EasyCart.OrderApi.DTOs
 {
-    public record OrderDto
+    public record OrderItemDto
     (
         int Id,
         int ProductId,
-        int PurchaseQuantity,
+        int Quantity,
+        decimal UnitPrice
+    );
+
+    public record OrderDto
+    (
+        int Id,
         int ClientId,
-        DateTime OrderDate
+        DateTime OrderDate,
+        IReadOnlyCollection<OrderItemDto> Items
     );
 }

@@ -1,4 +1,5 @@
-﻿using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.Entities;
 
 namespace EasyCart.OrderApi.Services
 {
@@ -6,5 +7,6 @@ namespace EasyCart.OrderApi.Services
     {
         Task<IEnumerable<OrderDto>> GetOrdersByClientIdAsync(int clientId);
         Task<OrderDetailsDto> GetOrderDetailsAsync(int orderId);
+        Task<Order?> BuildOrderAsync(OrderCreateDto request, int clientId);
     }
 }

@@ -1,30 +1,24 @@
-﻿using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.DTOs;
 using EasyCart.OrderApi.Entities;
 
 namespace EasyCart.OrderApi.DTOs.Conversions
 {
     public static class OrderConversion
     {
-        public static Order ToEntity(this OrderDto orderDto)
+        public static Order ToEntity(this OrderCreateDto orderDto, int clientId, IEnumerable<ProductDto> products)
         {
-            return new Order
-            {
-                Id = orderDto.Id,
-                ProductId = orderDto.ProductId,
-                ClientId = orderDto.ClientId,
-                PurchaseQuantity = orderDto.PurchaseQuantity,
-                OrderDate = orderDto.OrderDate
-            };
-        }
+            var productPrices = products.ToDictionary(product => product.Id, product => product.Price);
 
-        public static Order ToEntity(this OrderCreateDto orderDto, int clientId)
-        {
             return new Order
             {
-                ProductId = orderDto.ProductId,
                 ClientId = clientId,
-                PurchaseQuantity = orderDto.PurchaseQuantity,
-                OrderDate = DateTime.UtcNow
+                OrderDate = DateTime.UtcNow,
+                Items = orderDto.Items.Select(item => new OrderItem
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = productPrices[item.ProductId]
+                }).ToList()
             };
         }
 
@@ -33,28 +27,26 @@ namespace EasyCart.OrderApi.DTOs.Conversions
             return new Order
             {
                 Id = orderDto.Id,
-                ProductId = orderDto.ProductId,
                 ClientId = orderDto.ClientId,
-                PurchaseQuantity = orderDto.PurchaseQuantity,
-                OrderDate = orderDto.OrderDate
+                OrderDate = orderDto.OrderDate,
+                Items = orderDto.Items.Select(item => new OrderItem
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity
+                }).ToList()
             };
         }
 
-        public static IEnumerable<OrderDto> ToDtos(this IEnumerable<Order> orders)
-        {
-            return orders.Select(ToDto);
-        }
+        public static IEnumerable<OrderDto> ToDtos(this IEnumerable<Order> orders) => orders.Select(ToDto);
 
-        public static OrderDto ToDto(this Order order)
-        {
-            return new OrderDto
-            (
-                Id: order.Id,
-                ProductId: order.ProductId,
-                PurchaseQuantity: order.PurchaseQuantity,
-                ClientId: order.ClientId,
-                OrderDate: order.OrderDate
-            );
-        }
+        public static OrderDto ToDto(this Order order) => new(
+            order.Id,
+            order.ClientId,
+            order.OrderDate,
+            order.Items.Select(item => new OrderItemDto(
+                item.Id,
+                item.ProductId,
+                item.Quantity,
+                item.UnitPrice)).ToList());
     }
 }
