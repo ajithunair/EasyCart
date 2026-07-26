@@ -15,9 +15,9 @@
         "ClientWhitelist": [],
         "ClientIdHeader": "X-Api-Gateway",
         "EnableRateLimiting": true,
-        "Limit": 100,
+        "Limit": 50,
         "Period": "1m",
-        "PeriodTimespan": 1
+        "PeriodTimespan": 5
       }
     },
 

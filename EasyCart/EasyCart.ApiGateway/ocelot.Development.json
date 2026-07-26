@@ -15,9 +15,9 @@
         "ClientWhitelist": [],
         "ClientIdHeader": "X-Api-Gateway",
         "EnableRateLimiting": true,
-        "Limit": 100,
+        "Limit": 50,
         "Period": "1m",
-        "PeriodTimespan": 1
+        "PeriodTimespan": 5
       }
     },
     {
@@ -150,7 +150,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/inventory/{url}"
+      "UpstreamPathTemplate": "/api/inventory/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     }
   ],
   "GlobalConfiguration": {
@@ -158,7 +162,7 @@
     "RateLimitOptions": {
       "ClientIdHeader": "X-Api-Gateway",
       "QuotaExceededMessage": "Requests limit exceeded, Please try later",
-      "Limit": 5,
+      "Limit": 50,
       "Period": "1m",
       "PeriodTimespan": 5
     }
