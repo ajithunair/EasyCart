@@ -69,7 +69,7 @@ namespace EasyCart.AuthApi.Repositories
                 new TokenPair(
                     accessToken,
                     rawrRefreshToken,
-                    DateTime.UtcNow.AddMinutes(5)
+                    DateTime.UtcNow.AddMinutes(15)
                 )
             );
         }
@@ -119,7 +119,7 @@ namespace EasyCart.AuthApi.Repositories
                 new TokenPair(
                     GenerateAccessToken(storedToken.User),
                     newRawRefreshToken,
-                    now.AddMinutes(5)));
+                    now.AddMinutes(15)));
         }
 
         public async Task Logout(string rawRefreshToken)
@@ -203,7 +203,7 @@ namespace EasyCart.AuthApi.Repositories
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(5),
+                expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: credentials
                 );
 

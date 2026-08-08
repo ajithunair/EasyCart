@@ -1,6 +1,7 @@
 using EasyCart.AuthApi.Data;
 using EasyCart.AuthApi.DependencyInjection;
 using EasyCart.SharedLibrary.DependencyInjection;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,12 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+var keyVaultUrl = new Uri("https://easycart-kv.vault.azure.net/");
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
         optional: true,
         reloadOnChange: true)
-    .AddEnvironmentVariables();
+    .AddEnvironmentVariables()
+    .AddAzureKeyVault(keyVaultUrl, new DefaultAzureCredential());
 
 builder.Services.AddAuthenticationApiService(builder.Configuration);
 builder.Services.AddHealthChecks();

@@ -1,28 +1,5 @@
 
 services:
-  postgres: 
-    image: postgres:16 
-    container_name: EasyCart-postgres 
-    restart: always 
-    
-    environment: 
-      POSTGRES_USER: postgres 
-      POSTGRES_PASSWORD: postgres123 
-      POSTGRES_DB: easycartdb  
-
-    ports: 
-      - "5432:5432" 
-
-    volumes: 
-      - postgres_data:/var/lib/postgresql/data 
-      - /init.sql:/docker-entrypoint-initdb.d/init.sql
-
-    healthcheck: 
-      test: ["CMD-SHELL", "pg_isready -U postgres"] 
-      interval: 10s 
-      timeout: 5s 
-      retries: 5 
-
   redis:
     image: redis:7.2-alpine
     container_name: EasyCart_redis
@@ -67,7 +44,6 @@ services:
       - "4317:4317"
 
 volumes:
-  postgres_data:
   redis_data:
   redis_insight_data:
   rabbitmq_data:

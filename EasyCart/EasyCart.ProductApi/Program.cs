@@ -10,13 +10,15 @@ var connectionString = builder.Configuration.GetConnectionString("RedisConnectio
 // Add services to the container.
 
 builder.Services.AddControllers();
+var keyVaultUrl = new Uri("https://easycart-kv.vault.azure.net/");
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
         optional: true,
         reloadOnChange: true)
-    .AddEnvironmentVariables();
+    .AddEnvironmentVariables()
+    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.DefaultAzureCredential());
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
