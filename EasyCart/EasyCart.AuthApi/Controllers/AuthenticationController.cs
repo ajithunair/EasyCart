@@ -31,20 +31,69 @@ namespace EasyCart.AuthApi.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<ActionResult<Response>> Login(LoginDto loginDto)
+        public async Task<ActionResult<AuthResponseDto>> Login(LoginDto loginDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await userInterface.Login(loginDto);
+            var result = await userInterface.Login(
+                loginDto,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+
+            if(result == null)
+            {
+                return BadRequest(new AuthResponseDto(false, "Invalid credentials", null));
+            }
+
             if (result.Success)
             {
+                SetRefreshTokenCookie(result.TokenPair!.RefreshToken);
                 return Ok(result);
             }
             else
-                return BadRequest(result);
+                return Unauthorized("Invalid credentials");
+        }
+
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<ActionResult<AuthResponseDto>> Refresh()
+        {
+            if (!Request.Cookies.TryGetValue("refreshToken", out var rawRefreshToken) ||
+                string.IsNullOrWhiteSpace(rawRefreshToken))
+            {
+                return Unauthorized(new AuthResponseDto(false, "Refresh token is missing", null));
+            }
+
+            var result = await userInterface.Refresh(
+                rawRefreshToken,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+
+            if (result is null)
+            {
+                Response.Cookies.Delete("refreshToken", RefreshTokenCookieOptions());
+                return Unauthorized(new AuthResponseDto(false, "Invalid refresh token", null));
+            }
+
+            SetRefreshTokenCookie(result.TokenPair!.RefreshToken);
+            return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Logout()
+        {
+            if (Request.Cookies.TryGetValue("refreshToken", out var rawRefreshToken) &&
+                !string.IsNullOrWhiteSpace(rawRefreshToken))
+            {
+                await userInterface.Logout(rawRefreshToken);
+            }
+
+            Response.Cookies.Delete("refreshToken", RefreshTokenCookieOptions());
+            return NoContent();
         }
 
         [HttpGet("{id:int}")]
@@ -63,5 +112,20 @@ namespace EasyCart.AuthApi.Controllers
             if (user == null) return NotFound();
             return Ok(user);
         }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = RefreshTokenCookieOptions();
+            cookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(2);
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
+
+        private CookieOptions RefreshTokenCookieOptions() => new()
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Strict,
+            Secure = HttpContext.Request.IsHttps,
+            Path = "/api/Authentication"
+        };
     }
 }

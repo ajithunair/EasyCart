@@ -11,5 +11,6 @@
         public string Role { get; set; }
         public DateTime DateRegistered { get; set; } = DateTime.UtcNow;
 
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }
