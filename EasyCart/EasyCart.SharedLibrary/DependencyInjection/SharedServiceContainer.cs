@@ -16,6 +16,8 @@ namespace EasyCart.SharedLibrary.DependencyInjection
             // Register shared services here
             // Example: services.Add
 
+            services.AddHealthChecks();
+
             // Add DbContext with PostgreSQL provider
             services.AddDbContext<TContext>(options =>
                 options.UseNpgsql(config.GetConnectionString("EasyCartConnection"),

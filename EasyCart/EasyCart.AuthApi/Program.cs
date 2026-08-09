@@ -20,14 +20,14 @@ builder.Configuration
     .AddAzureKeyVault(keyVaultUrl, new DefaultAzureCredential());
 
 builder.Services.AddAuthenticationApiService(builder.Configuration);
-builder.Services.AddHealthChecks();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.ApplyMigrations<AuthenticationDbContext>();
+//app.ApplyMigrations<AuthenticationDbContext>();
 app.UseAuthenticationService();
 app.UseSwagger();
 app.UseSwaggerUI();

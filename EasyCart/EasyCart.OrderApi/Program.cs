@@ -45,7 +45,9 @@ builder.Services.AddOrderApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-app.ApplyMigrations<OrderDbContext>();
+app.MapHealthChecks("/health");
+
+//app.ApplyMigrations<OrderDbContext>();
 app.UserOrderApiMiddlewares();
 
 // Configure the HTTP request pipeline.

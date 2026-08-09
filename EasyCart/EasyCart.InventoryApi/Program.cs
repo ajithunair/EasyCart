@@ -47,7 +47,9 @@ builder.Services.AddInventoryApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-app.ApplyMigrations<InventoryDbContext>();
+app.MapHealthChecks("/health");
+
+//app.ApplyMigrations<InventoryDbContext>();
 app.UseInventoryApiMiddlewares();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
