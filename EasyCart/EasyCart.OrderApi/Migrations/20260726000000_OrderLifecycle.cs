@@ -1,9 +1,12 @@
+using EasyCart.OrderApi.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace EasyCart.OrderApi.Migrations
 {
+    [DbContext(typeof(OrderDbContext))]
     [Migration("20260726000000_OrderLifecycle")]
     public partial class OrderLifecycle : Migration
     {

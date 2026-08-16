@@ -1,3 +1,5 @@
+using EasyCart.OrderApi.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -5,6 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace EasyCart.OrderApi.Migrations
 {
+    [DbContext(typeof(OrderDbContext))]
     [Migration("20260725190000_Cart")]
     public partial class Cart : Migration
     {

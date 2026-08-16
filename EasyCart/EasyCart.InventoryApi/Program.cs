@@ -49,7 +49,7 @@ var app = builder.Build();
 
 app.MapHealthChecks("/health");
 
-//app.ApplyMigrations<InventoryDbContext>();
+app.ApplyMigrations<InventoryDbContext>();
 app.UseInventoryApiMiddlewares();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

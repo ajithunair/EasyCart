@@ -47,7 +47,7 @@ var app = builder.Build();
 
 app.MapHealthChecks("/health");
 
-//app.ApplyMigrations<OrderDbContext>();
+app.ApplyMigrations<OrderDbContext>();
 app.UserOrderApiMiddlewares();
 
 // Configure the HTTP request pipeline.

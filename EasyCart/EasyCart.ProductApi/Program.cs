@@ -39,7 +39,7 @@ var app = builder.Build();
 app.MapHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
-//app.ApplyMigrations<ProductDbContext>();
+app.ApplyMigrations<ProductDbContext>();
 app.UseProductApiMiddlewares();
 
 if (app.Environment.IsDevelopment())
