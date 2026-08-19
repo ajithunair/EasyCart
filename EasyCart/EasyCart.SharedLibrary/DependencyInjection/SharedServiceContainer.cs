@@ -23,6 +23,10 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                 options.UseNpgsql(config.GetConnectionString("EasyCartConnection"),
                 sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
+            var logDirectory = Path.GetDirectoryName(fileName);
+            if (!string.IsNullOrWhiteSpace(logDirectory))
+                Directory.CreateDirectory(logDirectory);
+
             //Add serilog logger
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()

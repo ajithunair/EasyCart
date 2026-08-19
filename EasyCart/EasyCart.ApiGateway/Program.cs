@@ -4,6 +4,7 @@ using Ocelot.Cache.CacheManager;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Values;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,18 @@ builder.Configuration
         reloadOnChange: true)
 
     .AddEnvironmentVariables();
+
+var gatewayLogFile = builder.Configuration["Serilog:FileName"] ?? "Serilog/ApiGateway.log";
+Directory.CreateDirectory(Path.GetDirectoryName(gatewayLogFile) ?? "Serilog");
+builder.Host.UseSerilog((_, _, loggerConfiguration) => loggerConfiguration
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.Debug()
+    .WriteTo.File(
+        gatewayLogFile,
+        rollingInterval: RollingInterval.Day,
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
 builder.Services
     .AddOcelot(builder.Configuration)
@@ -65,4 +78,3 @@ app.UseMiddleware<AttachApiGatewaySignarureToRequest>();
 await app.UseOcelot();
 
 app.Run();
-
