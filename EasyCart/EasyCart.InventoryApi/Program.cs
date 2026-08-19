@@ -18,7 +18,7 @@ builder.Configuration
         optional: true,
         reloadOnChange: true)
     .AddEnvironmentVariables()
-    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.DefaultAzureCredential());
+    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.AzureCliCredential());
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();

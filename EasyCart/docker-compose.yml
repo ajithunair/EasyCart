@@ -24,7 +24,7 @@ services:
       retries: 5 
 
   redis:
-    image: redis:7.2-alpine
+    image: redis:7.4-alpine
     container_name: EasyCart_redis
     restart: always
     ports:
@@ -44,7 +44,7 @@ services:
       - redis
   
   rabbitmq:
-    image: rabbitmq:3.13-management
+    image: rabbitmq:3.13.6-management
     container_name: EasyCart-rabbitmq
     ports:
       # RabbitMQ Broker port (MassTransit connects here)
