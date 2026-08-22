@@ -17,7 +17,7 @@ builder.Configuration
         optional: true,
         reloadOnChange: true)
     .AddEnvironmentVariables()
-    .AddAzureKeyVault(keyVaultUrl, new AzureCliCredential());
+    .AddAzureKeyVault(keyVaultUrl, new DefaultAzureCredential());
 
 builder.Services.AddAuthenticationApiService(builder.Configuration);
 

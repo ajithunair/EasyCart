@@ -17,28 +17,49 @@ builder.Configuration
         optional: true,
         reloadOnChange: true)
     .AddEnvironmentVariables()
-    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.AzureCliCredential());
+    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.DefaultAzureCredential());
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
 
 var rabbitSection = builder.Configuration.GetSection("RabbitMQ");
+var serviceBusConnectionString = builder.Configuration.GetConnectionString("EasycartServiceBus");
+var messagingTransport = builder.Configuration["Messaging:Transport"]
+    ?? (builder.Environment.IsDevelopment() ? "RabbitMQ" : "AzureServiceBus");
 
 //Configure MassTransit
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<OrderInventoryReservationConsumer>();
 
-    x.UsingRabbitMq((context, config) =>
+    if (string.Equals(messagingTransport, "RabbitMQ", StringComparison.OrdinalIgnoreCase))
     {
-        config.Host(rabbitSection["Host"]!, "/", h =>
+        x.UsingRabbitMq((context, config) =>
         {
-            h.Username(rabbitSection["Username"]!);
-            h.Password(rabbitSection["Password"]!);
-        });
+            config.Host(rabbitSection["Host"]!, "/", h =>
+            {
+                h.Username(rabbitSection["Username"]!);
+                h.Password(rabbitSection["Password"]!);
+            });
 
-        config.ConfigureEndpoints(context);
-    });
+            config.ConfigureEndpoints(context);
+        });
+    }
+    else if (string.Equals(messagingTransport, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+    {
+        if (string.IsNullOrWhiteSpace(serviceBusConnectionString))
+            throw new InvalidOperationException("Azure Service Bus connection string is not configured.");
+
+        x.UsingAzureServiceBus((context, config) =>
+        {
+            config.Host(serviceBusConnectionString);
+            config.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        throw new InvalidOperationException($"Unsupported messaging transport: {messagingTransport}.");
+    }
 });
 
 builder.Services.AddOrderApiServices(builder.Configuration);
