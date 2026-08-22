@@ -11,7 +11,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
     public static class SharedServiceContainer
     {
         public static IServiceCollection AddSharedServices<TContext>
-            (this IServiceCollection services, IConfiguration config, string fileName) where TContext : DbContext
+            (this IServiceCollection services, IConfiguration config, string fileName, string dbConnection) where TContext : DbContext
         {
             // Register shared services here
             // Example: services.Add
@@ -20,7 +20,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
 
             // Add DbContext with PostgreSQL provider
             services.AddDbContext<TContext>(options =>
-                options.UseNpgsql(config.GetConnectionString("EasyCartConnection"),
+                options.UseNpgsql(dbConnection,
                 sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
             var logDirectory = Path.GetDirectoryName(fileName);

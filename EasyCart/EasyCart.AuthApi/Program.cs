@@ -9,15 +9,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-var keyVaultUrl = new Uri("https://easycart-kv.vault.azure.net/");
-
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
         optional: true,
         reloadOnChange: true)
-    .AddEnvironmentVariables()
-    .AddAzureKeyVault(keyVaultUrl, new DefaultAzureCredential());
+    .AddEnvironmentVariables();
+
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new DefaultAzureCredential());
+    // Container/App Service settings intentionally take precedence over Key Vault values.
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 builder.Services.AddAuthenticationApiService(builder.Configuration);
 
@@ -27,7 +32,10 @@ builder.Services.AddSwaggerWithBearerAuth();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.ApplyMigrations<AuthenticationDbContext>();
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    app.ApplyMigrations<AuthenticationDbContext>();
+}
 app.UseAuthenticationService();
 app.UseSwagger();
 app.UseSwaggerUI();

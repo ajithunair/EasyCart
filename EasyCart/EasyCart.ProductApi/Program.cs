@@ -9,15 +9,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-var keyVaultUrl = new Uri("https://easycart-kv.vault.azure.net/");
-
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
         optional: true,
         reloadOnChange: true)
-    .AddEnvironmentVariables()
-    .AddAzureKeyVault(keyVaultUrl, new Azure.Identity.DefaultAzureCredential());
+    .AddEnvironmentVariables();
+
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new Azure.Identity.DefaultAzureCredential());
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
@@ -46,7 +50,10 @@ var app = builder.Build();
 app.MapHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
-app.ApplyMigrations<ProductDbContext>();
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    app.ApplyMigrations<ProductDbContext>();
+}
 app.UseProductApiMiddlewares();
 
 if (app.Environment.IsDevelopment())

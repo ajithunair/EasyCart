@@ -11,7 +11,7 @@ namespace EasyCart.SharedLibrary.DependencyInjection
     {
         public static IServiceCollection AddSharedOpenTelemetry(this IServiceCollection services, IConfiguration config)
         {
-            var serviceName = config["OpenTelemetry:ServiceName"];
+            var serviceName = config["OpenTelemetry:ServiceName"] ?? "EasyCart";
             var endpoint = config["OpenTelemetry:Endpoint"];
             var appInsightsConnectionString = config["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
@@ -24,12 +24,11 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                     .AddHttpClientInstrumentation()
                     // Instruments built-in Kestrel and ASP.NET Core metrics
                     .AddAspNetCoreInstrumentation()
-                    // Standard OTLP Exporter targeting your Prometheus/Collector instance
-                    .AddOtlpExporter(options =>
+                    ;
+                    if (!string.IsNullOrWhiteSpace(endpoint))
                     {
-                        options.Endpoint = new Uri(endpoint);
-                        options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                    });
+                        metrics.AddOtlpExporter(options => options.Endpoint = new Uri(endpoint));
+                    }
                     if (!string.IsNullOrEmpty(appInsightsConnectionString))
                     {
                         metrics.AddAzureMonitorMetricExporter(options =>
@@ -44,12 +43,12 @@ namespace EasyCart.SharedLibrary.DependencyInjection
                     .AddSource("MassTransit")
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddEntityFrameworkCoreInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation();
 
-                    .AddOtlpExporter(options =>
+                    if (!string.IsNullOrWhiteSpace(endpoint))
                     {
-                        options.Endpoint=new Uri(endpoint);
-                    });
+                        tracing.AddOtlpExporter(options => options.Endpoint = new Uri(endpoint));
+                    }
 
                     if (!string.IsNullOrEmpty(appInsightsConnectionString))
                     {
