@@ -17,34 +17,66 @@ builder.Configuration
         reloadOnChange: true)
     .AddEnvironmentVariables();
 
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new Azure.Identity.DefaultAzureCredential());
+    builder.Configuration.AddEnvironmentVariables();
+}
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
 
 var rabbitSection = builder.Configuration.GetSection("RabbitMQ");
+var serviceBusConnectionString = builder.Configuration.GetConnectionString("EasycartServiceBus");
+var messagingTransport = builder.Configuration["Messaging:Transport"]
+    ?? (builder.Environment.IsDevelopment() ? "RabbitMQ" : "AzureServiceBus");
 
 builder.Services.AddMassTransit(x =>
 {
     // Register the consumer
     x.AddConsumer<OrderPlacedConsumer>();
 
-    x.UsingRabbitMq((context, config) =>
+    if (string.Equals(messagingTransport, "RabbitMQ", StringComparison.OrdinalIgnoreCase))
     {
-        config.Host(rabbitSection["Host"]!, "/", h =>
+        x.UsingRabbitMq((context, config) =>
         {
-            h.Username(rabbitSection["Username"]!);
-            h.Password(rabbitSection["Password"]!);
-        });
+            config.Host(rabbitSection["Host"]!, "/", h =>
+            {
+                h.Username(rabbitSection["Username"]!);
+                h.Password(rabbitSection["Password"]!);
+            });
 
-        // Automatically configure endpoints (Queues) based on the registered consumers
-        config.ConfigureEndpoints(context);
-    });
+            config.ConfigureEndpoints(context);
+        });
+    }
+    else if (string.Equals(messagingTransport, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+    {
+        if (string.IsNullOrWhiteSpace(serviceBusConnectionString))
+            throw new InvalidOperationException("Azure Service Bus connection string is not configured.");
+
+        x.UsingAzureServiceBus((context, config) =>
+        {
+            config.Host(serviceBusConnectionString);
+            config.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        throw new InvalidOperationException($"Unsupported messaging transport: {messagingTransport}.");
+    }
 });
 
 builder.Services.AddInventoryApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-app.ApplyMigrations<InventoryDbContext>();
+app.MapHealthChecks("/health");
+
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    app.ApplyMigrations<InventoryDbContext>();
+}
 app.UseInventoryApiMiddlewares();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

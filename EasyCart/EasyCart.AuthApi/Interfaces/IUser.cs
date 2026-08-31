@@ -6,7 +6,9 @@ namespace EasyCart.AuthApi.Interfaces
     public interface IUser
     {
         Task<Response> Register(AppUserDto appUserDto);
-        Task<Response> Login(LoginDto loginDto);
+        Task<AuthResponseDto> Login(LoginDto loginDto, string? ipAddress, string? userAgent);
+        Task<AuthResponseDto?> Refresh(string refreshToken, string? ipAddress, string? userAgent);
+        Task Logout(string refreshToken);
         Task<GetUserDto> GetUser(int  userId);
     }
 }

@@ -1,4 +1,5 @@
 using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.Data;
 using EasyCart.OrderApi.DTOs.Conversions;
 using EasyCart.OrderApi.Entities;
 using EasyCart.OrderApi.Interfaces;
@@ -8,18 +9,22 @@ using EasyCart.SharedLibrary.Responses;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace EasyCart.OrderApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class OrdersController(IOrder orderInterface, IOrderService orderService, IPublishEndpoint publishEndpoint) : ControllerBase
+    public class OrdersController(IOrder orderInterface, IOrderService orderService, IPublishEndpoint publishEndpoint, OrderDbContext context) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
         {
-            var orders = await orderInterface.GetAllAsync();
+            var orders = User.IsInRole("Admin")
+                ? await orderInterface.GetAllAsync()
+                : await orderInterface.GetOrdersAsync(o => o.ClientId == GetAuthenticatedUserId());
             return orders.Any() ? Ok(orders.ToDtos()) : NotFound("No orders found.");
         }
 
@@ -27,6 +32,11 @@ namespace EasyCart.OrderApi.Controllers
         public async Task<ActionResult<OrderDto>> GetOrder(int id)
         {
             var order = await orderInterface.FindByIdAsync(id);
+            if (order is not null && !CanAccess(order.ClientId))
+            {
+                return Forbid();
+            }
+
             return order is null ? NotFound("Order not found.") : Ok(order.ToDto());
         }
 
@@ -36,6 +46,11 @@ namespace EasyCart.OrderApi.Controllers
             if (clientId <= 0)
             {
                 return BadRequest("Client id must be greater than zero.");
+            }
+
+            if (!User.IsInRole("Admin") && clientId != GetAuthenticatedUserId())
+            {
+                return Forbid();
             }
 
             var orders = await orderService.GetOrdersByClientIdAsync(clientId);
@@ -50,14 +65,30 @@ namespace EasyCart.OrderApi.Controllers
                 return BadRequest("Order id must be greater than zero.");
             }
 
+            var order = await orderInterface.FindByIdAsync(orderId);
+            if (order is null)
+            {
+                return NotFound("Order details not found.");
+            }
+
+            if (!CanAccess(order.ClientId))
+            {
+                return Forbid();
+            }
+
             var details = await orderService.GetOrderDetailsAsync(orderId);
-            return details.OrderId > 0 ? Ok(details) : NotFound("Order details not found.");
+            return (details != null && details.OrderId > 0) ? Ok(details) : NotFound("Order details not found.");
         }
 
         [HttpPost]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> CreateOrder([FromBody] OrderCreateDto orderDto)
         {
-            var orderEntity = orderDto.ToEntity();
+            var orderEntity = await orderService.BuildOrderAsync(orderDto, GetAuthenticatedUserId());
+            if (orderEntity is null)
+            {
+                return BadRequest("One or more products could not be found.");
+            }
+
             var response = await orderInterface.CreateAsync(orderEntity);
 
             if (response.Success)
@@ -69,11 +100,11 @@ namespace EasyCart.OrderApi.Controllers
                     OrderDate = orderEntity.OrderDate,
                     Items =
                     [
-                        new OrderItemMessage
+                        .. orderEntity.Items.Select(item => new OrderItemMessage
                         {
-                            ProductId = orderEntity.ProductId,
-                            Quantity = orderEntity.PurchaseQuantity
-                        }
+                            ProductId = item.ProductId,
+                            Quantity = item.Quantity
+                        })
                     ]
                 };
 
@@ -92,6 +123,11 @@ namespace EasyCart.OrderApi.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> UpdateOrder(int id, [FromBody] OrderUpdateDto orderDto)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             if (id != orderDto.Id)
             {
                 return BadRequest("Route id does not match the payload id.");
@@ -104,9 +140,62 @@ namespace EasyCart.OrderApi.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<EasyCart.SharedLibrary.Responses.Response>> DeleteOrder(int id)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             // Deletion only needs the identifier, so callers do not have to submit the full order payload.
             var response = await orderInterface.DeleteAsync(new Order { Id = id });
             return response.Success ? Ok(response) : BadRequest(response);
         }
+
+        [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<OrderDto>> UpdateStatus(int id, OrderStatusUpdateDto request)
+        {
+            var order = await context.Orders
+                .Include(existing => existing.Items)
+                .SingleOrDefaultAsync(existing => existing.Id == id);
+            if (order is null)
+                return NotFound("Order not found.");
+
+            var validStatuses = new[]
+            {
+                OrderStatuses.Pending,
+                OrderStatuses.Confirmed,
+                OrderStatuses.Shipped,
+                OrderStatuses.Delivered,
+                OrderStatuses.Cancelled
+            };
+            if (!validStatuses.Contains(request.Status, StringComparer.OrdinalIgnoreCase))
+                return BadRequest("Invalid order status.");
+
+            // Shipping timestamps are managed here so delivery history is consistent with the status.
+            order.Status = request.Status;
+            if (request.PaymentStatus is not null)
+                order.PaymentStatus = request.PaymentStatus;
+            if (request.ShippingStatus is not null)
+                order.ShippingStatus = request.ShippingStatus;
+            if (request.TrackingNumber is not null)
+                order.TrackingNumber = request.TrackingNumber;
+            if (string.Equals(request.Status, OrderStatuses.Shipped, StringComparison.OrdinalIgnoreCase))
+                order.ShippedAt ??= DateTime.UtcNow;
+            if (string.Equals(request.Status, OrderStatuses.Delivered, StringComparison.OrdinalIgnoreCase))
+                order.DeliveredAt ??= DateTime.UtcNow;
+
+            await context.SaveChangesAsync();
+            return Ok(order.ToDto());
+        }
+
+        private int GetAuthenticatedUserId()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(userId, out var parsedUserId) && parsedUserId > 0
+                ? parsedUserId
+                : throw new InvalidOperationException("Authenticated user id is missing from the token.");
+        }
+
+        private bool CanAccess(int clientId) => User.IsInRole("Admin") || clientId == GetAuthenticatedUserId();
     }
 }

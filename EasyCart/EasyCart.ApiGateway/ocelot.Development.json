@@ -15,9 +15,9 @@
         "ClientWhitelist": [],
         "ClientIdHeader": "X-Api-Gateway",
         "EnableRateLimiting": true,
-        "Limit": 100,
+        "Limit": 50,
         "Period": "1m",
-        "PeriodTimespan": 1
+        "PeriodTimespan": 5
       }
     },
     {
@@ -70,7 +70,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders"
+      "UpstreamPathTemplate": "/api/orders",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/orders/{id}",
@@ -82,7 +86,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamPathTemplate": "/api/orders/{id}"
+      "UpstreamPathTemplate": "/api/orders/{id}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/orders/{url}",
@@ -94,7 +102,43 @@
         }
       ],
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/orders/{url}"
+      "UpstreamPathTemplate": "/api/orders/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/cart",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "DELETE" ],
+      "UpstreamPathTemplate": "/api/cart",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/cart/{url}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5002
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamPathTemplate": "/api/cart/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     },
     {
       "DownstreamPathTemplate": "/api/inventory/{url}",
@@ -106,7 +150,11 @@
         }
       ],
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "UpstreamPathTemplate": "/api/inventory/{url}"
+      "UpstreamPathTemplate": "/api/inventory/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
     }
   ],
   "GlobalConfiguration": {
@@ -114,7 +162,7 @@
     "RateLimitOptions": {
       "ClientIdHeader": "X-Api-Gateway",
       "QuotaExceededMessage": "Requests limit exceeded, Please try later",
-      "Limit": 5,
+      "Limit": 50,
       "Period": "1m",
       "PeriodTimespan": 5
     }

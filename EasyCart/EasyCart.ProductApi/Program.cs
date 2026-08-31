@@ -2,15 +2,13 @@ using EasyCart.ProductApi.Data;
 using EasyCart.ProductApi.DependencyInjection;
 using EasyCart.SharedLibrary.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var connectionString = builder.Configuration.GetConnectionString("RedisConnection");
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
@@ -18,24 +16,44 @@ builder.Configuration
         reloadOnChange: true)
     .AddEnvironmentVariables();
 
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new Azure.Identity.DefaultAzureCredential());
+    builder.Configuration.AddEnvironmentVariables();
+}
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithBearerAuth();
 
 builder.Services.AddProductApiServices(builder.Configuration);
 
-builder.Services.AddStackExchangeRedisCache(options =>
+var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection");
+if (string.IsNullOrWhiteSpace(redisConnectionString))
 {
-    // The connection string pointing to localhost:6379 (local) or Azure Redis
-    options.Configuration = connectionString;
+    Log.Information("Redis is not configured; Product API will read products directly from PostgreSQL.");
+}
+else
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        // Do not prevent the API from starting when an optional cache is offline.
+        options.Configuration = $"{redisConnectionString},abortConnect=false,connectTimeout=1000,syncTimeout=1000,asyncTimeout=1000,connectRetry=1";
+        options.InstanceName = "ProductService_";
+    });
 
-    // Optional prefix so your keys look like "ProductService_Product:1" in Redis Insight
-    options.InstanceName = "ProductService_";
-});
+    Log.Information("Redis cache is configured for the Product API.");
+}
 
 var app = builder.Build();
 
+app.MapHealthChecks("/health");
+
 // Configure the HTTP request pipeline.
-app.ApplyMigrations<ProductDbContext>();
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    app.ApplyMigrations<ProductDbContext>();
+}
 app.UseProductApiMiddlewares();
 
 if (app.Environment.IsDevelopment())

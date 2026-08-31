@@ -13,7 +13,7 @@ namespace EasyCart.OrderApi.DependencyInjection
     {
         public static IServiceCollection AddOrderApiServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSharedServices<OrderDbContext>(configuration, configuration["Serilog:FileName"]!);
+            services.AddSharedServices<OrderDbContext>(configuration, configuration["Serilog:FileName"]!, configuration.GetConnectionString("orderdb")!);
             services.AddScoped<IOrder, OrderRepository>();
 
             //register HttpClient for OrderApi 

@@ -1,5 +1,6 @@
-﻿using EasyCart.OrderApi.DTOs;
+using EasyCart.OrderApi.DTOs;
 using EasyCart.OrderApi.DTOs.Conversions;
+using EasyCart.OrderApi.Entities;
 using EasyCart.OrderApi.Interfaces;
 using Polly;
 using Polly.Registry;
@@ -8,79 +9,76 @@ namespace EasyCart.OrderApi.Services
 {
     public class OrderService(IOrder orderInterface, HttpClient httpClient, ResiliencePipelineProvider<string> resiliencePipeline) : IOrderService
     {
+        public async Task<Order?> BuildOrderAsync(OrderCreateDto request, int clientId)
+        {
+            var retryPipeline = resiliencePipeline.GetPipeline("my-retry-pipeline");
+            var products = new List<ProductDto>();
+
+            foreach (var item in request.Items)
+            {
+                var product = await retryPipeline.ExecuteAsync(async token => await GetProductByIdAsync(item.ProductId));
+                if (product is null || product.Price < 0)
+                    return null;
+
+                products.Add(product);
+            }
+
+            // Prices are resolved server-side and copied onto OrderItems; clients cannot set purchase prices.
+            return request.ToEntity(clientId, products);
+        }
+
         public async Task<ProductDto> GetProductByIdAsync(int productId)
         {
             var httpResponse = await httpClient.GetAsync($"api/products/{productId}");
-            if (!httpResponse.IsSuccessStatusCode)
-            {
-                return null!;
-            }
-            var product = await httpResponse.Content.ReadFromJsonAsync<ProductDto>();
-            return product!;
+            if (!httpResponse.IsSuccessStatusCode) return null!;
+            return await httpResponse.Content.ReadFromJsonAsync<ProductDto>() ?? null!;
         }
 
         public async Task<AppUserDto> GetUser(int userId)
         {
             var httpResponse = await httpClient.GetAsync($"api/authentication/{userId}");
-            if (!httpResponse.IsSuccessStatusCode)
-            {
-                return null!;
-            }
-            var user = await httpResponse.Content.ReadFromJsonAsync<AppUserDto>();
-            return user!;
+            if (!httpResponse.IsSuccessStatusCode) return null!;
+            return await httpResponse.Content.ReadFromJsonAsync<AppUserDto>() ?? null!;
         }
+
         public async Task<OrderDetailsDto> GetOrderDetailsAsync(int orderId)
         {
-            //Prepare order
             var order = await orderInterface.FindByIdAsync(orderId);
-            if (order == null)
+            if (order is null) return null!;
+
+            var retryPipeline = resiliencePipeline.GetPipeline("my-retry-pipeline");
+            var appUserDto = await retryPipeline.ExecuteAsync(async token => await GetUser(order.ClientId));
+            if (appUserDto is null) return null!;
+
+            var itemDetails = new List<OrderItemDetailsDto>();
+            foreach (var item in order.Items)
             {
-                return null!;
+                var product = await retryPipeline.ExecuteAsync(async token => await GetProductByIdAsync(item.ProductId));
+                if (product is null) return null!;
+
+                itemDetails.Add(new OrderItemDetailsDto(
+                    item.ProductId,
+                    product.Name,
+                    item.Quantity,
+                    item.UnitPrice,
+                    item.UnitPrice * item.Quantity));
             }
 
-            //Get retry pipeline
-            var retryPipeline = resiliencePipeline.GetPipeline("my-retry-pipeline");
-
-            //prepare product and user tasks
-            var productDto = await retryPipeline.ExecuteAsync(async token => await GetProductByIdAsync(order.ProductId));
-            var appUserDto = await retryPipeline.ExecuteAsync(async token => await GetUser(order.ClientId));
-
-            if(productDto is null)
-                return null!;
-
-            if (appUserDto is null)
-                return null!;
-
-
-            //populate order details
-            var orderDetails = new OrderDetailsDto(
-            order.Id,
-            productDto.Id,
-            order.PurchaseQuantity,
-            appUserDto.Id,
-            appUserDto.Email,
-            appUserDto.Address,
-            appUserDto.PhoneNumber,
-            productDto.Name,
-            order.PurchaseQuantity,
-            productDto.Price,
-            productDto.Price * order.PurchaseQuantity,
-            order.OrderDate
-            );
-
-            return orderDetails;
+            return new OrderDetailsDto(
+                order.Id,
+                appUserDto.Id,
+                appUserDto.Email,
+                appUserDto.Address,
+                appUserDto.PhoneNumber,
+                itemDetails,
+                itemDetails.Sum(item => item.TotalPrice),
+                order.OrderDate);
         }
 
         public async Task<IEnumerable<OrderDto>> GetOrdersByClientIdAsync(int clientId)
         {
             var orders = await orderInterface.GetOrdersAsync(o => o.ClientId == clientId);
-            if(orders == null || !orders.Any())
-            {
-                return Enumerable.Empty<OrderDto>();
-            }
-
             return orders.ToDtos();
         }
     }
 }
-

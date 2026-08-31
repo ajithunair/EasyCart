@@ -9,7 +9,7 @@ namespace EasyCart.InventoryApi.DependencyInjection
     {
         public static IServiceCollection AddInventoryApiServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSharedServices<InventoryDbContext>(configuration, configuration["Serilog:FileName"]!);
+            services.AddSharedServices<InventoryDbContext>(configuration, configuration["Serilog:FileName"]!, configuration.GetConnectionString("inventorydb")!);
             services.AddScoped<IInventory, InventoryRepository>();
             return services;
         }

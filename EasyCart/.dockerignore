@@ -2,3 +2,6 @@
 **/obj/
 .vs/
 .git/
+.env
+*.log
+Serilog/

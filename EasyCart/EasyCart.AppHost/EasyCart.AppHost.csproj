@@ -1,0 +1,19 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.2.4">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>4315e6dc-aacf-41e4-90a4-ed803ee94c5f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EasyCart.ApiGateway\EasyCart.ApiGateway.csproj" />
+    <ProjectReference Include="..\EasyCart.AuthApi\EasyCart.AuthApi.csproj" />
+    <ProjectReference Include="..\EasyCart.InventoryApi\EasyCart.InventoryApi.csproj" />
+    <ProjectReference Include="..\EasyCart.OrderApi\EasyCart.OrderApi.csproj" />
+    <ProjectReference Include="..\EasyCart.ProductApi\EasyCart.ProductApi.csproj" />
+  </ItemGroup>
+
+</Project>

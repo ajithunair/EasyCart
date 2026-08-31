@@ -16,9 +16,9 @@
         "ClientWhitelist": [],
         "ClientIdHeader": "X-Api-Gateway",
         "EnableRateLimiting": true,
-        "Limit": 100,
+        "Limit": 50,
         "Period": "1m",
-        "PeriodTimespan": 1
+        "PeriodTimespan": 5
       }
     },
 
@@ -143,6 +143,38 @@
     },
 
     {
+      "DownstreamPathTemplate": "/api/cart",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "easycart-order",
+          "Port": 8080
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "DELETE" ],
+      "UpstreamPathTemplate": "/api/cart",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/cart/{url}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "easycart-order",
+          "Port": 8080
+        }
+      ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamPathTemplate": "/api/cart/{url}",
+      "AuthenticationOptions": {
+        "AllowedScopes": [],
+        "AuthenticationProviderKey": "Bearer"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/inventory/{url}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -165,7 +197,7 @@
     "RateLimitOptions": {
       "ClientIdHeader": "X-Api-Gateway",
       "QuotaExceededMessage": "Requests limit exceeded, Please try later",
-      "Limit": 5,
+      "Limit": 50,
       "Period": "1m",
       "PeriodTimespan": 5
     }

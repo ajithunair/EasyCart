@@ -9,7 +9,6 @@ namespace EasyCart.AuthApi.DTOs
         [Required, EmailAddress] string Email,
         [Required] string Address,
         [Required] string PhoneNumber,
-        [Required] string Password,
-        [Required] string Role
+        [Required, MinLength(8)] string Password
     );
 }

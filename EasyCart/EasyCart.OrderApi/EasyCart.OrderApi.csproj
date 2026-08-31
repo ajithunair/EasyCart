@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.1" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.10" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.28">
       <PrivateAssets>all</PrivateAssets>

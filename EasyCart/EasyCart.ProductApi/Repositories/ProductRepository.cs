@@ -5,12 +5,13 @@ using EasyCart.SharedLibrary.Logs;
 using EasyCart.SharedLibrary.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Serilog;
 using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace EasyCart.ProductApi.Repositories
 {
-    public class ProductRepository(ProductDbContext context, IDistributedCache cache) : IProduct
+    public class ProductRepository(ProductDbContext context, IDistributedCache? cache = null) : IProduct
     {
         public async Task<Response> CreateAsync(Product entity)
         {
@@ -57,9 +58,8 @@ namespace EasyCart.ProductApi.Repositories
                 context.Products.Remove(product);
                 await context.SaveChangesAsync();
 
-                // Remove the cached item so a future read cannot serve stale product data.
-                var cacheKey = GetCacheKey(entity.Id);
-                await cache.RemoveAsync(cacheKey);
+                // A cache failure must not undo a successful database operation.
+                await TryRemoveFromCacheAsync(GetCacheKey(entity.Id));
 
                 return new Response { Success = true, Message = $"{product.Name} deleted successfully." };
             }
@@ -72,11 +72,10 @@ namespace EasyCart.ProductApi.Repositories
 
         public async Task<Product?> FindByIdAsync(int id)
         {
-            var cacheKey = GetCacheKey(id);
             try
             {
-                // Try Redis first so hot product lookups stay fast.
-                var cachedProduct = await cache.GetStringAsync(cacheKey);
+                var cacheKey = GetCacheKey(id);
+                var cachedProduct = await TryGetFromCacheAsync(cacheKey);
                 if (!string.IsNullOrWhiteSpace(cachedProduct))
                 {
                     return JsonSerializer.Deserialize<Product>(cachedProduct);
@@ -93,7 +92,7 @@ namespace EasyCart.ProductApi.Repositories
                     };
 
                     var serializedProduct = JsonSerializer.Serialize(product);
-                    await cache.SetStringAsync(cacheKey, serializedProduct, cacheOptions);
+                    await TrySetInCacheAsync(cacheKey, serializedProduct, cacheOptions);
                 }
 
                 return product;
@@ -148,9 +147,8 @@ namespace EasyCart.ProductApi.Repositories
 
                 await context.SaveChangesAsync();
 
-                // Clear the cached item so reads will repopulate with the latest values.
-                var cacheKey = GetCacheKey(entity.Id);
-                await cache.RemoveAsync(cacheKey);
+                // A cache failure must not turn a successful update into an error response.
+                await TryRemoveFromCacheAsync(GetCacheKey(entity.Id));
 
                 return new Response { Success = true, Message = $"{product.Name} updated successfully." };
             }
@@ -167,5 +165,51 @@ namespace EasyCart.ProductApi.Repositories
         }
 
         private static string GetCacheKey(int id) => $"Product:{id}";
+
+        private async Task<string?> TryGetFromCacheAsync(string cacheKey)
+        {
+            if (cache is null) return null;
+
+            try
+            {
+                return await cache.GetStringAsync(cacheKey);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Redis cache read failed for {CacheKey}; continuing with PostgreSQL.", cacheKey);
+                return null;
+            }
+        }
+
+        private async Task TrySetInCacheAsync(
+            string cacheKey,
+            string value,
+            DistributedCacheEntryOptions options)
+        {
+            if (cache is null) return;
+
+            try
+            {
+                await cache.SetStringAsync(cacheKey, value, options);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Redis cache write failed for {CacheKey}; continuing without caching.", cacheKey);
+            }
+        }
+
+        private async Task TryRemoveFromCacheAsync(string cacheKey)
+        {
+            if (cache is null) return;
+
+            try
+            {
+                await cache.RemoveAsync(cacheKey);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Redis cache invalidation failed for {CacheKey}; the database change was preserved.", cacheKey);
+            }
+        }
     }
 }

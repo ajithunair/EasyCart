@@ -9,7 +9,7 @@ namespace EasyCart.AuthApi.DependencyInjection
     {
         public static IServiceCollection AddAuthenticationApiService(this IServiceCollection services, IConfiguration config)
         {
-            services.AddSharedServices<AuthenticationDbContext>(config, config["Serilog:FileName"]!); 
+            services.AddSharedServices<AuthenticationDbContext>(config, config["Serilog:FileName"]!, config.GetConnectionString("authdb")!);
 
             services.AddScoped<IUser, UserRepository>();
             
