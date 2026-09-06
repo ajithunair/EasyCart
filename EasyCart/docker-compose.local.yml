@@ -1,0 +1,44 @@
+# This is a docker-compose file for local development. It overrides the default environment variables for each service to use local settings.
+# The services section is used to define the environment variables for each service, which are then passed to the respective containers when they are started.
+# Make sure to set the environment variables in your local environment (same terminal) or in a .env file before running docker-compose up.
+services:
+  product-api:
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      KeyVault__Uri: ${KEYVAULT_URI}
+      Database__ApplyMigrations: "false"
+
+  order-api:
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      KeyVault__Uri: ${KEYVAULT_URI}
+      Messaging__Transport: RabbitMQ
+      Database__ApplyMigrations: "false"
+
+  inventory-api:
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      KeyVault__Uri: ${KEYVAULT_URI}
+      Messaging__Transport: RabbitMQ
+      Database__ApplyMigrations: "false"
+
+  auth-api:
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      KeyVault__Uri: ${KEYVAULT_URI}
+      Database__ApplyMigrations: "false"
+
+  api-gateway:
+    environment:
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
+      KeyVault__Uri: ${KEYVAULT_URI}
